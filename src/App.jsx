@@ -284,12 +284,6 @@ const GraphVisualization = () => {
                     </div>
                   )}
                 </div>
-                <button
-                  className="btn btn-outline-info w-100 mb-4"
-                  onClick={() => setSelectedNode(null)}
-                >
-                  Reset Selection
-                </button>
               </div>
 
               <NetworkStatistics
@@ -312,6 +306,12 @@ const GraphVisualization = () => {
             <div className="card bg-dark border-secondary mb-3">
               <div className="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0 text-light">Network Graph</h5>
+                <button
+                  className="btn btn-outline-info w-10"
+                  onClick={() => setSelectedNode(null)}
+                >
+                  Reset Selection
+                </button>
               </div>
               <div
                 className="card-body p-0"
