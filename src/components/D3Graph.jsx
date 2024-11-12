@@ -15,6 +15,64 @@ const D3Graph = ({
   const nodesRef = useRef(null);
   const linksRef = useRef(null);
   const labelsRef = useRef(null);
+  const particlesRef = useRef(null);
+
+  // Particle animation configuration
+  const PARTICLE_RADIUS = 3;
+  const PARTICLE_DURATION = 2000; // Duration in milliseconds
+
+  const createParticleData = useCallback((edge) => {
+    return {
+      source: edge.source,
+      target: edge.target,
+      startTime: Date.now(),
+      metric1: edge.metric1,
+      metric2: edge.metric2,
+    };
+  }, []);
+
+  const updateParticles = useCallback(() => {
+    if (!selectedNode || !particlesRef.current) return;
+
+    const relevantEdges = data.edges.filter(
+      (edge) =>
+        edge.source.id === selectedNode.id || edge.target.id === selectedNode.id
+    );
+
+    // Create new particles
+    relevantEdges.forEach((edge) => {
+      if (Math.random() < 0.1) {
+        // Control particle generation rate
+        const particle = createParticleData(edge);
+        const particleElement = particlesRef.current
+          .append("circle")
+          .attr("r", PARTICLE_RADIUS)
+          .attr(
+            "fill",
+            edge.source.id === selectedNode.id ? "#40c4ff" : "#ff9f40"
+          )
+          .attr("opacity", 0.7);
+
+        // Animate particle along the path
+        const startX = edge.source.x;
+        const startY = edge.source.y;
+        const endX = edge.target.x;
+        const endY = edge.target.y;
+
+        particleElement
+          .attr("cx", startX)
+          .attr("cy", startY)
+          .transition()
+          .duration(PARTICLE_DURATION)
+          .ease(d3.easeLinear)
+          .attr("cx", endX)
+          .attr("cy", endY)
+          .on("end", function () {
+            d3.select(this).remove();
+          });
+      }
+    });
+  }, [selectedNode, data.edges, createParticleData]);
 
   const drag = useCallback(() => {
     function dragstarted(event) {
@@ -72,22 +130,9 @@ const D3Graph = ({
 
       const g = svg.append("g");
 
-      svg
-        .append("defs")
-        .append("marker")
-        .attr("id", "arrowhead")
-        .attr("viewBox", "-10 -5 10 10")
-        .attr("refX", 15)
-        .attr("refY", 0)
-        .attr("markerWidth", 8)
-        .attr("markerHeight", 8)
-        .attr("orient", "auto")
-        .append("path")
-        .attr("d", "M-10,-5L0,0L-10,5")
-        .attr("fill", "rgba(255,255,255,0.4)");
-
-      // Create groups for links, nodes, and labels
+      // Create groups for links, nodes, labels, and particles
       linksRef.current = g.append("g").selectAll("line");
+      particlesRef.current = g.append("g"); // Container for particles
       nodesRef.current = g.append("g").selectAll("circle");
       labelsRef.current = g.append("g").selectAll("text");
 
@@ -112,11 +157,17 @@ const D3Graph = ({
     // Update the simulation with new data
     const simulation = simulationRef.current;
 
-    // Update links
+    // Update links with gradients for data flow
     linksRef.current = linksRef.current
       .data(data.edges)
       .join("line")
-      .attr("stroke", "rgba(255,255,255,0.2)")
+      .attr("stroke", (d) => {
+        if (selectedNode) {
+          if (d.source.id === selectedNode.id) return "rgba(64, 196, 255, 0.4)";
+          if (d.target.id === selectedNode.id) return "rgba(255, 159, 64, 0.4)";
+        }
+        return "rgba(255,255,255,0.2)";
+      })
       .attr("stroke-width", (d) => Math.sqrt(d.weight))
       .attr("marker-end", "url(#arrowhead)");
 
@@ -153,11 +204,11 @@ const D3Graph = ({
       .attr("fill", "rgba(255,255,255,0.7)")
       .attr("dy", 20);
 
-    // Update simulation with new data without resetting positions
+    // Update simulation
     simulation.nodes(data.nodes);
     simulation.force("link").links(data.edges);
 
-    // Only initialize positions if they haven't been set
+    // Initialize positions if needed
     data.nodes.forEach((node) => {
       if (typeof node.x === "undefined" || typeof node.y === "undefined") {
         node.x = width / 2 + (Math.random() - 0.5) * 100;
@@ -178,16 +229,25 @@ const D3Graph = ({
       labelsRef.current.attr("x", (d) => d.x).attr("y", (d) => d.y);
     });
 
-    // Reheat the simulation slightly when data changes
-    simulation.alpha(0.1).restart();
+    // Start particle animation loop
+    const animationInterval = setInterval(updateParticles, 100);
 
-    // Cleanup function
+    // Cleanup
     return () => {
       if (simulation) {
         simulation.on("tick", null);
       }
+      clearInterval(animationInterval);
     };
-  }, [data, selectedNode, searchTerm, loading, drag, setSelectedNode]);
+  }, [
+    data,
+    selectedNode,
+    searchTerm,
+    loading,
+    drag,
+    setSelectedNode,
+    updateParticles,
+  ]);
 
   return (
     <div className="w-100 h-100">

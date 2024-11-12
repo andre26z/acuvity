@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import NetworkStatistics from "./components/NetworkStatistics";
 import D3Graph from "./components/D3Graph";
+import DataBrowser from "./components/DataBrowser";
 
 const GraphVisualization = () => {
   const [data, setData] = useState({ nodes: [], edges: [] });
@@ -14,7 +15,7 @@ const GraphVisualization = () => {
     isolatedNodes: 0,
   });
 
-  // Memoize generateMockData
+  // Rest of your state and functions remain the same...
   const generateMockData = useCallback((nodeCount = 50) => {
     const nodes = Array.from({ length: nodeCount }, (_, i) => ({
       id: `node${i}`,
@@ -42,7 +43,7 @@ const GraphVisualization = () => {
     return { nodes, edges };
   }, []);
 
-  // Load initial data
+  // Keep all your existing useEffects and functions...
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -74,7 +75,6 @@ const GraphVisualization = () => {
     loadData();
   }, [generateMockData]);
 
-  // Update filtered nodes
   useEffect(() => {
     const filtered = data.nodes.filter((node) =>
       node.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -165,7 +165,7 @@ const GraphVisualization = () => {
               </div>
               <div
                 className="card-body p-0"
-                style={{ background: "#1a1b26", height: "60vh" }}
+                style={{ background: "#1a1b26", height: "50vh" }}
               >
                 <D3Graph
                   data={data}
@@ -177,83 +177,14 @@ const GraphVisualization = () => {
               </div>
             </div>
 
-            {/* Node Details Card */}
-            <div className="card bg-dark border-secondary mb-3">
-              <div className="card-header bg-dark border-secondary">
-                <h5 className="card-title mb-0 text-light">
-                  {selectedNode
-                    ? `Node Details: ${selectedNode.name}`
-                    : "Node Details"}
-                </h5>
-              </div>
-              <div
-                className="card-body"
-                style={{ maxHeight: "30vh", overflowY: "auto" }}
-              >
-                {selectedNode ? (
-                  <div className="row g-3">
-                    <div className="col-12 col-md-6">
-                      <h6 className="text-info">Outgoing Connections</h6>
-                      <div className="list-group bg-dark">
-                        {getConnectedEdges(selectedNode.id)
-                          .filter((edge) => edge.source.id === selectedNode.id)
-                          .map((edge, i) => (
-                            <div
-                              key={i}
-                              className="list-group-item bg-dark text-light border-secondary p-2"
-                            >
-                              <h6 className="mb-1 fs-6">
-                                To: {edge.target.name}
-                              </h6>
-                              <p className="mb-1 small">
-                                Weight: {edge.weight.toFixed(2)}
-                              </p>
-                              <small className="text-muted d-block">
-                                Metric 1: {edge.metric1.toFixed(2)}
-                                <br />
-                                Metric 2: {edge.metric2.toFixed(2)}
-                              </small>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <h6 className="text-info">Incoming Connections</h6>
-                      <div className="list-group bg-dark">
-                        {getConnectedEdges(selectedNode.id)
-                          .filter((edge) => edge.target.id === selectedNode.id)
-                          .map((edge, i) => (
-                            <div
-                              key={i}
-                              className="list-group-item bg-dark text-light border-secondary p-2"
-                            >
-                              <h6 className="mb-1 fs-6">
-                                From: {edge.source.name}
-                              </h6>
-                              <p className="mb-1 small">
-                                Weight: {edge.weight.toFixed(2)}
-                              </p>
-                              <small className="text-muted d-block">
-                                Metric 1: {edge.metric1.toFixed(2)}
-                                <br />
-                                Metric 2: {edge.metric2.toFixed(2)}
-                              </small>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center text-muted p-4">
-                    <h6>No node selected</h6>
-                    <p>Click on a node in the graph to view its details</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Data Browser Card */}
+            <DataBrowser
+              selectedNode={selectedNode}
+              getConnectedEdges={getConnectedEdges}
+            />
 
             {/* Mobile Statistics */}
-            <div className="d-md-none">
+            <div className="d-md-none pt-2">
               <div className="card bg-dark border-secondary">
                 <div className="card-body">
                   <NetworkStatistics
