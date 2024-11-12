@@ -320,74 +320,72 @@ const GraphVisualization = () => {
             </div>
           </div>
 
-          {selectedNode && (
-            <div className="card bg-dark border-secondary ">
-              <div className="card-header bg-dark border-secondary">
-                <h5 className="card-title mb-0 text-light">
-                  {selectedNode
-                    ? `Node Details: ${selectedNode.name}`
-                    : "Node Details"}
-                </h5>
-              </div>
-              <div className="card-body">
-                {selectedNode ? (
-                  <div className="row">
-                    <div className="col-md-6">
-                      <h6 className="text-info">Outgoing Connections</h6>
-                      <div className="list-group bg-dark">
-                        {getConnectedEdges(selectedNode.id)
-                          .filter((edge) => edge.source.id === selectedNode.id)
-                          .map((edge, i) => (
-                            <div
-                              key={i}
-                              className="list-group-item bg-dark text-light border-secondary"
-                            >
-                              <h6 className="mb-1">To: {edge.target.name}</h6>
-                              <p className="mb-1 small">
-                                Weight: {edge.weight.toFixed(2)}
-                              </p>
-                              <small className="text-muted">
-                                Metric 1: {edge.metric1.toFixed(2)}
-                                <br />
-                                Metric 2: {edge.metric2.toFixed(2)}
-                              </small>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <h6 className="text-info">Incoming Connections</h6>
-                      <div className="list-group bg-dark">
-                        {getConnectedEdges(selectedNode.id)
-                          .filter((edge) => edge.target.id === selectedNode.id)
-                          .map((edge, i) => (
-                            <div
-                              key={i}
-                              className="list-group-item bg-dark text-light border-secondary"
-                            >
-                              <h6 className="mb-1">From: {edge.source.name}</h6>
-                              <p className="mb-1 small">
-                                Weight: {edge.weight.toFixed(2)}
-                              </p>
-                              <small className="text-muted">
-                                Metric 1: {edge.metric1.toFixed(2)}
-                                <br />
-                                Metric 2: {edge.metric2.toFixed(2)}
-                              </small>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center text-muted p-4">
-                    <h6>No node selected</h6>
-                    <p>Click on a node in the graph to view its details</p>
-                  </div>
-                )}
-              </div>
+          <div className="card bg-dark border-secondary ">
+            <div className="card-header bg-dark border-secondary">
+              <h5 className="card-title mb-0 text-light">
+                {selectedNode
+                  ? `Node Details: ${selectedNode.name}`
+                  : "Node Details"}
+              </h5>
             </div>
-          )}
+            <div className="card-body">
+              {selectedNode ? (
+                <div className="row">
+                  <div className="col-md-6">
+                    <h6 className="text-info">Outgoing Connections</h6>
+                    <div className="list-group bg-dark">
+                      {getConnectedEdges(selectedNode.id)
+                        .filter((edge) => edge.source.id === selectedNode.id)
+                        .map((edge, i) => (
+                          <div
+                            key={i}
+                            className="list-group-item bg-dark text-light border-secondary"
+                          >
+                            <h6 className="mb-1">To: {edge.target.name}</h6>
+                            <p className="mb-1 small">
+                              Weight: {edge.weight.toFixed(2)}
+                            </p>
+                            <small className="text-muted">
+                              Metric 1: {edge.metric1.toFixed(2)}
+                              <br />
+                              Metric 2: {edge.metric2.toFixed(2)}
+                            </small>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <h6 className="text-info">Incoming Connections</h6>
+                    <div className="list-group bg-dark">
+                      {getConnectedEdges(selectedNode.id)
+                        .filter((edge) => edge.target.id === selectedNode.id)
+                        .map((edge, i) => (
+                          <div
+                            key={i}
+                            className="list-group-item bg-dark text-light border-secondary"
+                          >
+                            <h6 className="mb-1">From: {edge.source.name}</h6>
+                            <p className="mb-1 small">
+                              Weight: {edge.weight.toFixed(2)}
+                            </p>
+                            <small className="text-muted">
+                              Metric 1: {edge.metric1.toFixed(2)}
+                              <br />
+                              Metric 2: {edge.metric2.toFixed(2)}
+                            </small>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-muted p-4">
+                  <h6>No node selected</h6>
+                  <p>Click on a node in the graph to view its details</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
