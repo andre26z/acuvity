@@ -1,43 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-  Chart as ChartJS,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import { Scatter } from "react-chartjs-2";
+import React, { useState, useEffect, useCallback } from "react";
 import NetworkStatistics from "./components/NetworkStatistics";
-
-ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend);
-
-const generateMockData = (nodeCount = 50) => {
-  const nodes = Array.from({ length: nodeCount }, (_, i) => ({
-    id: `node${i}`,
-    name: `Node ${i}`,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    group: Math.floor(Math.random() * 5),
-  }));
-
-  const edges = Array.from({ length: 100 }, () => {
-    const source = Math.floor(Math.random() * nodeCount);
-    const target = Math.floor(Math.random() * nodeCount);
-    return {
-      source: nodes[source],
-      target: nodes[target],
-      weight: Math.random() * 10,
-      metric1: Math.random() * 100,
-      metric2: Math.random() * 1000,
-      timestamp: new Date(
-        Date.now() - Math.random() * 10000000000
-      ).toISOString(),
-    };
-  });
-
-  return { nodes, edges };
-};
+import D3Graph from "./components/D3Graph";
 
 const GraphVisualization = () => {
   const [data, setData] = useState({ nodes: [], edges: [] });
@@ -51,32 +14,67 @@ const GraphVisualization = () => {
     isolatedNodes: 0,
   });
 
-  const chartRef = useRef(null);
+  // Memoize generateMockData
+  const generateMockData = useCallback((nodeCount = 50) => {
+    const nodes = Array.from({ length: nodeCount }, (_, i) => ({
+      id: `node${i}`,
+      name: `Node ${i}`,
+      group: Math.floor(Math.random() * 5),
+      radius: 8,
+    }));
 
-  useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      const newData = generateMockData(50);
-      setData(newData);
+    const edgeCount = Math.min(nodeCount * 2, 100);
+    const edges = Array.from({ length: edgeCount }, () => {
+      const source = Math.floor(Math.random() * nodeCount);
+      const target = Math.floor(Math.random() * nodeCount);
+      return {
+        source: nodes[source],
+        target: nodes[target],
+        weight: Math.random() * 10,
+        metric1: Math.random() * 100,
+        metric2: Math.random() * 1000,
+        timestamp: new Date(
+          Date.now() - Math.random() * 10000000000
+        ).toISOString(),
+      };
+    });
 
-      const connectionCounts = newData.nodes.map((node) => {
-        return newData.edges.filter(
-          (edge) => edge.source.id === node.id || edge.target.id === node.id
-        ).length;
-      });
-
-      setStatistics({
-        avgConnections: (
-          connectionCounts.reduce((a, b) => a + b, 0) / connectionCounts.length
-        ).toFixed(1),
-        maxConnections: Math.max(...connectionCounts),
-        isolatedNodes: connectionCounts.filter((count) => count === 0).length,
-      });
-
-      setLoading(false);
-    }, 500);
+    return { nodes, edges };
   }, []);
 
+  // Load initial data
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const newData = generateMockData(50);
+        setData(newData);
+
+        const connectionCounts = newData.nodes.map((node) => {
+          return newData.edges.filter(
+            (edge) => edge.source.id === node.id || edge.target.id === node.id
+          ).length;
+        });
+
+        setStatistics({
+          avgConnections: (
+            connectionCounts.reduce((a, b) => a + b, 0) /
+            connectionCounts.length
+          ).toFixed(1),
+          maxConnections: Math.max(...connectionCounts),
+          isolatedNodes: connectionCounts.filter((count) => count === 0).length,
+        });
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [generateMockData]);
+
+  // Update filtered nodes
   useEffect(() => {
     const filtered = data.nodes.filter((node) =>
       node.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -84,157 +82,19 @@ const GraphVisualization = () => {
     setFilteredNodes(filtered);
   }, [searchTerm, data.nodes]);
 
-  const prepareEdgeConnections = (selectedNode, edges) => {
-    if (!selectedNode) return [];
-
-    return edges
-      .filter(
-        (edge) =>
-          edge.source.id === selectedNode.id ||
-          edge.target.id === selectedNode.id
-      )
-      .map((edge) => [
-        {
-          x: edge.source.x,
-          y: edge.source.y,
-          name: edge.source.name,
-        },
-        {
-          x: edge.target.x,
-          y: edge.target.y,
-          name: edge.target.name,
-        },
-      ])
-      .flat();
-  };
-
-  const chartData = {
-    datasets: [
-      {
-        label: "Nodes",
-        data: data.nodes.map((node) => ({
-          x: node.x,
-          y: node.y,
-          id: node.id,
-          name: node.name,
-          group: node.group,
-        })),
-        backgroundColor: data.nodes.map((node) => {
-          if (selectedNode?.id === node.id) return "rgba(64, 196, 255, 0.8)";
-          if (
-            searchTerm &&
-            node.name.toLowerCase().includes(searchTerm.toLowerCase())
-          ) {
-            return "rgba(255, 159, 64, 0.8)";
-          }
-          return "rgba(98, 114, 164, 0.6)";
-        }),
-        pointRadius: data.nodes.map((node) =>
-          selectedNode?.id === node.id ||
-          (searchTerm &&
-            node.name.toLowerCase().includes(searchTerm.toLowerCase()))
-            ? 12
-            : 8
-        ),
-        pointHoverRadius: 15,
-        borderWidth: 2,
-        borderColor: "rgba(255, 255, 255, 0.8)",
-        elements: {
-          point: {
-            radius: 8,
-            cursor: "pointer",
-          },
-        },
-      },
-      ...(selectedNode
-        ? [
-            {
-              label: "Connections",
-              data: prepareEdgeConnections(selectedNode, data.edges),
-              showLine: true,
-              backgroundColor: "transparent",
-              borderColor: "rgba(64, 196, 255, 0.4)",
-              borderWidth: 2,
-              pointRadius: 0,
-              tension: 0.2,
-              fill: false,
-            },
-          ]
-        : []),
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        grid: {
-          color: "rgba(255, 255, 255, 0.1)",
-        },
-        ticks: {
-          color: "rgba(255, 255, 255, 0.7)",
-        },
-      },
-      y: {
-        grid: {
-          color: "rgba(255, 255, 255, 0.1)",
-        },
-        ticks: {
-          color: "rgba(255, 255, 255, 0.7)",
-        },
-      },
+  const getConnectedEdges = useCallback(
+    (nodeId) => {
+      return data.edges.filter(
+        (edge) => edge.source.id === nodeId || edge.target.id === nodeId
+      );
     },
-    elements: {
-      point: {
-        hoverCursor: "pointer",
-      },
-    },
-    plugins: {
-      tooltip: {
-        callbacks: {
-          label: (context) => {
-            const point = context.raw;
-            return (
-              point.name || `(${point.x.toFixed(2)}, ${point.y.toFixed(2)})`
-            );
-          },
-        },
-        backgroundColor: "rgba(0, 0, 0, 0.8)",
-        padding: 12,
-        titleFont: {
-          size: 14,
-        },
-        bodyFont: {
-          size: 13,
-        },
-      },
-      legend: {
-        display: false,
-      },
-    },
-
-    onClick: (event, elements) => {
-      if (elements.length > 0) {
-        const pointIndex = elements[0].index;
-        const node = data.nodes[pointIndex];
-        setSelectedNode(node);
-      } else {
-        setSelectedNode(null);
-      }
-    },
-  };
-
-  const getConnectedEdges = (nodeId) => {
-    return data.edges.filter(
-      (edge) => edge.source.id === nodeId || edge.target.id === nodeId
-    );
-  };
+    [data.edges]
+  );
 
   return (
     <div className="container-fluid p-0 bg-dark text-light min-vh-100">
       <div className="row g-1">
-        {/* Sidebar - Only visible on larger screens (≥760px) */}
+        {/* Sidebar */}
         <div
           className="col-md-3 d-none d-md-block border-end border-secondary"
           style={{ background: "#1a1b26" }}
@@ -263,9 +123,7 @@ const GraphVisualization = () => {
                       <div
                         key={node.id}
                         className="p-2 border-bottom border-secondary hover:bg-secondary"
-                        style={{
-                          cursor: "pointer",
-                        }}
+                        style={{ cursor: "pointer" }}
                         onClick={() => {
                           setSelectedNode(node);
                           setSearchTerm("");
@@ -309,19 +167,13 @@ const GraphVisualization = () => {
                 className="card-body p-0"
                 style={{ background: "#1a1b26", height: "60vh" }}
               >
-                {loading ? (
-                  <div className="d-flex justify-content-center align-items-center h-100">
-                    <div className="spinner-border text-info" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                  </div>
-                ) : (
-                  <Scatter
-                    ref={chartRef}
-                    data={chartData}
-                    options={chartOptions}
-                  />
-                )}
+                <D3Graph
+                  data={data}
+                  loading={loading}
+                  selectedNode={selectedNode}
+                  setSelectedNode={setSelectedNode}
+                  searchTerm={searchTerm}
+                />
               </div>
             </div>
 
@@ -400,7 +252,7 @@ const GraphVisualization = () => {
               </div>
             </div>
 
-            {/* Statistics for mobile view - Only visible below 760px */}
+            {/* Mobile Statistics */}
             <div className="d-md-none">
               <div className="card bg-dark border-secondary">
                 <div className="card-body">
