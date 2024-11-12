@@ -29,7 +29,8 @@ const D3Graph = ({
       const svg = d3
         .select(svgRef.current)
         .attr("width", width)
-        .attr("height", height);
+        .attr("height", height)
+        .attr("viewBox", [0, 0, width, height]);
 
       const zoom = d3
         .zoom()
@@ -47,7 +48,6 @@ const D3Graph = ({
       nodesRef.current = g.append("g").selectAll("circle");
       labelsRef.current = g.append("g").selectAll("text");
 
-      // Initialize a basic force simulation
       simulationRef.current = d3
         .forceSimulation()
         .force(
@@ -61,30 +61,78 @@ const D3Graph = ({
         .force("center", d3.forceCenter(width / 2, height / 2));
     }
 
-    // Update the simulation with new data
     const simulation = simulationRef.current;
+
+    // Create all links but only show the ones connected to the selected node
+    const allLinks = data.edges.map((d) => ({
+      source:
+        typeof d.source === "string"
+          ? data.nodes.find((n) => n.id === d.source)
+          : d.source,
+      target:
+        typeof d.target === "string"
+          ? data.nodes.find((n) => n.id === d.target)
+          : d.target,
+      ...d,
+    }));
+
+    // Calculate node radius (used for arrow positioning)
+    const getNodeRadius = (d) => d.radius || 5;
 
     // Update links
     linksRef.current = linksRef.current
-      .data(data.edges)
+      .data(allLinks)
       .join("line")
       .attr("stroke", (d) => {
-        if (selectedNode) {
-          if (d.source.id === selectedNode.id) return "rgba(64, 196, 255, 0.4)";
-          if (d.target.id === selectedNode.id) return "rgba(255, 159, 64, 0.4)";
+        const sourceId = d.source.id || d.source;
+        const targetId = d.target.id || d.target;
+        if (!selectedNode) return "rgba(255,255,255,0)"; // Hide when no node selected
+        if (sourceId !== selectedNode.id && targetId !== selectedNode.id) {
+          return "rgba(255,255,255,0)"; // Hide unconnected links
         }
-        return "rgba(255,255,255,0.2)";
+        return sourceId === selectedNode.id
+          ? "rgba(64, 196, 255, 0.4)" // Outgoing
+          : "rgba(255, 159, 64, 0.4)"; // Incoming
       })
-      .attr("stroke-width", (d) => Math.sqrt(d.weight));
+      .attr("stroke-width", (d) => Math.sqrt(d.weight || 1))
+      .attr("marker-end", (d) => {
+        const sourceId = d.source.id || d.source;
+        if (
+          !selectedNode ||
+          (sourceId !== selectedNode.id && d.target.id !== selectedNode.id)
+        ) {
+          return null; // Hide arrows for unconnected links
+        }
+        return sourceId === selectedNode.id
+          ? "url(#arrowOut)"
+          : "url(#arrowIn)";
+      });
 
     // Update nodes
     nodesRef.current = nodesRef.current
       .data(data.nodes)
       .join("circle")
       .style("cursor", "pointer")
-      .attr("r", (d) => d.radius)
+      .attr("r", getNodeRadius)
       .attr("fill", (d) => {
-        if (selectedNode?.id === d.id) return "rgba(64, 196, 255, 0.8)";
+        if (selectedNode) {
+          if (selectedNode.id === d.id) return "rgba(64, 196, 255, 0.8)";
+          // Check if node is connected to selected node
+          const isConnected = allLinks.some(
+            (link) =>
+              (link.source.id === selectedNode.id && link.target.id === d.id) ||
+              (link.target.id === selectedNode.id && link.source.id === d.id)
+          );
+          if (isConnected) {
+            return allLinks.some(
+              (link) =>
+                link.target.id === d.id && link.source.id === selectedNode.id
+            )
+              ? "rgba(64, 196, 255, 0.6)" // Outgoing nodes
+              : "rgba(255, 159, 64, 0.6)"; // Incoming nodes
+          }
+          return "rgba(98, 114, 164, 0.3)"; // Dim unconnected nodes
+        }
         if (
           searchTerm &&
           d.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -106,12 +154,22 @@ const D3Graph = ({
       .join("text")
       .text((d) => d.name)
       .attr("font-size", "10px")
-      .attr("fill", "rgba(255,255,255,0.7)")
+      .attr("fill", (d) => {
+        if (!selectedNode) return "rgba(255,255,255,0.7)";
+        const isConnected = allLinks.some(
+          (link) =>
+            (link.source.id === selectedNode.id && link.target.id === d.id) ||
+            (link.target.id === selectedNode.id && link.source.id === d.id)
+        );
+        return selectedNode.id === d.id || isConnected
+          ? "rgba(255,255,255,0.9)"
+          : "rgba(255,255,255,0.3)";
+      })
       .attr("dy", 20);
 
     // Apply forces to nodes and links
     simulation.nodes(data.nodes);
-    simulation.force("link").links(data.edges);
+    simulation.force("link").links(allLinks);
 
     // Initialize node positions if they don't exist
     data.nodes.forEach((node) => {
@@ -121,20 +179,31 @@ const D3Graph = ({
       }
     });
 
-    // Update positions on tick
+    // Update positions on tick with arrow adjustments
     simulation.on("tick", () => {
       linksRef.current
         .attr("x1", (d) => d.source.x)
         .attr("y1", (d) => d.source.y)
-        .attr("x2", (d) => d.target.x)
-        .attr("y2", (d) => d.target.y);
+        .attr("x2", (d) => {
+          const dx = d.target.x - d.source.x;
+          const dy = d.target.y - d.source.y;
+          const angle = Math.atan2(dy, dx);
+          const targetRadius = getNodeRadius(d.target);
+          return d.target.x - targetRadius * Math.cos(angle);
+        })
+        .attr("y2", (d) => {
+          const dx = d.target.x - d.source.x;
+          const dy = d.target.y - d.source.y;
+          const angle = Math.atan2(dy, dx);
+          const targetRadius = getNodeRadius(d.target);
+          return d.target.y - targetRadius * Math.sin(angle);
+        });
 
       nodesRef.current.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
-
       labelsRef.current.attr("x", (d) => d.x).attr("y", (d) => d.y);
     });
 
-    // Cleanup function to stop the simulation on unmount
+    // Cleanup
     return () => {
       if (simulation) {
         simulation.on("tick", null);
@@ -145,13 +214,42 @@ const D3Graph = ({
   return (
     <div className="w-100 h-100">
       {loading ? (
-        <div className="d-flex justify-content-center align-items-center h-100">
-          <div className="spinner-border text-info" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
+        <div className="flex justify-center items-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
         </div>
       ) : (
-        <svg ref={svgRef} className="w-100 h-100" />
+        <svg ref={svgRef} className="w-100 h-100">
+          <defs>
+            <marker
+              id="arrowOut"
+              viewBox="-10 -5 20 10"
+              refX="0"
+              refY="0"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M -10 -5 L 0 0 L -10 5 z"
+                fill="rgba(64, 196, 255, 0.4)"
+              />
+            </marker>
+            <marker
+              id="arrowIn"
+              viewBox="-10 -5 20 10"
+              refX="0"
+              refY="0"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M -10 -5 L 0 0 L -10 5 z"
+                fill="rgba(255, 159, 64, 0.4)"
+              />
+            </marker>
+          </defs>
+        </svg>
       )}
     </div>
   );
