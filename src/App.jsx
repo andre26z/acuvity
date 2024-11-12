@@ -234,77 +234,62 @@ const GraphVisualization = () => {
   return (
     <div className="container-fluid p-0 bg-dark text-light min-vh-100">
       <div className="row g-1">
-        {/* Sidebar - Collapsible on mobile */}
+        {/* Sidebar - Only visible on larger screens (≥760px) */}
         <div
-          className="col-lg-3 col-md-4 border-end border-secondary"
+          className="col-md-3 d-none d-md-block border-end border-secondary"
           style={{ background: "#1a1b26" }}
         >
           <div className="p-3">
-            {/* Collapse toggle for mobile */}
-            <button
-              className="btn btn-outline-info w-100 mb-3 d-lg-none"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#sidebarContent"
-              aria-expanded="false"
-              aria-controls="sidebarContent"
-            >
-              Toggle Controls
-            </button>
-
-            {/* Collapsible content */}
-            <div className="collapse d-lg-block" id="sidebarContent">
-              <div className="mb-4">
-                <h5 className="text-light mb-3">Graph Controls</h5>
-                <div className="position-relative mb-3">
-                  <input
-                    type="text"
-                    className="form-control bg-dark text-light border-secondary"
-                    placeholder="Search nodes..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  {searchTerm && filteredNodes.length > 0 && (
-                    <div
-                      className="position-absolute w-100 mt-1 bg-dark border border-secondary rounded shadow-sm"
-                      style={{
-                        zIndex: 1000,
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                      }}
-                    >
-                      {filteredNodes.map((node) => (
-                        <div
-                          key={node.id}
-                          className="p-2 border-bottom border-secondary hover:bg-secondary"
-                          style={{
-                            cursor: "pointer",
-                          }}
-                          onClick={() => {
-                            setSelectedNode(node);
-                            setSearchTerm("");
-                          }}
-                        >
-                          {node.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+            <div className="mb-4">
+              <h5 className="text-light mb-3">Graph Controls</h5>
+              <div className="position-relative mb-3">
+                <input
+                  type="text"
+                  className="form-control bg-dark text-light border-secondary"
+                  placeholder="Search nodes..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && filteredNodes.length > 0 && (
+                  <div
+                    className="position-absolute w-100 mt-1 bg-dark border border-secondary rounded shadow-sm"
+                    style={{
+                      zIndex: 1000,
+                      maxHeight: "200px",
+                      overflowY: "auto",
+                    }}
+                  >
+                    {filteredNodes.map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-2 border-bottom border-secondary hover:bg-secondary"
+                        style={{
+                          cursor: "pointer",
+                        }}
+                        onClick={() => {
+                          setSelectedNode(node);
+                          setSearchTerm("");
+                        }}
+                      >
+                        {node.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-
-              <NetworkStatistics
-                data={data}
-                statistics={statistics}
-                selectedNode={selectedNode}
-                getConnectedEdges={getConnectedEdges}
-              />
             </div>
+
+            <NetworkStatistics
+              data={data}
+              statistics={statistics}
+              selectedNode={selectedNode}
+              getConnectedEdges={getConnectedEdges}
+            />
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="col-lg-9 col-md-8">
+        <div className="col-12 col-md-9">
           <div
             className="p-3"
             style={{ background: "#1a1b26", minHeight: "100vh" }}
@@ -341,7 +326,7 @@ const GraphVisualization = () => {
             </div>
 
             {/* Node Details Card */}
-            <div className="card bg-dark border-secondary">
+            <div className="card bg-dark border-secondary mb-3">
               <div className="card-header bg-dark border-secondary">
                 <h5 className="card-title mb-0 text-light">
                   {selectedNode
@@ -412,6 +397,20 @@ const GraphVisualization = () => {
                     <p>Click on a node in the graph to view its details</p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Statistics for mobile view - Only visible below 760px */}
+            <div className="d-md-none">
+              <div className="card bg-dark border-secondary">
+                <div className="card-body">
+                  <NetworkStatistics
+                    data={data}
+                    statistics={statistics}
+                    selectedNode={selectedNode}
+                    getConnectedEdges={getConnectedEdges}
+                  />
+                </div>
               </div>
             </div>
           </div>
