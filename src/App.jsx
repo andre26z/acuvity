@@ -8,6 +8,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Scatter } from 'react-chartjs-2';
+import NetworkStatistics from './components/NetworkStatistics';
 
 ChartJS.register(
   LinearScale,
@@ -17,7 +18,6 @@ ChartJS.register(
   Legend
 );
 
-// Previous helper functions remain the same...
 const generateMockData = (nodeCount = 50) => {
   const nodes = Array.from({ length: nodeCount }, (_, i) => ({
     id: `node${i}`,
@@ -44,19 +44,37 @@ const generateMockData = (nodeCount = 50) => {
 };
 
 const GraphVisualization = () => {
-  // Previous state declarations and useEffects remain the same...
   const [data, setData] = useState({ nodes: [], edges: [] });
   const [selectedNode, setSelectedNode] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [filteredNodes, setFilteredNodes] = useState([]);
+  const [statistics, setStatistics] = useState({
+    avgConnections: 0,
+    maxConnections: 0,
+    isolatedNodes: 0,
+  });
   
   const chartRef = useRef(null);
 
   useEffect(() => {
     setLoading(true);
     setTimeout(() => {
-      setData(generateMockData(50));
+      const newData = generateMockData(50);
+      setData(newData);
+      
+      const connectionCounts = newData.nodes.map(node => {
+        return newData.edges.filter(edge => 
+          edge.source.id === node.id || edge.target.id === node.id
+        ).length;
+      });
+      
+      setStatistics({
+        avgConnections: (connectionCounts.reduce((a, b) => a + b, 0) / connectionCounts.length).toFixed(1),
+        maxConnections: Math.max(...connectionCounts),
+        isolatedNodes: connectionCounts.filter(count => count === 0).length,
+      });
+      
       setLoading(false);
     }, 500);
   }, []);
@@ -68,7 +86,6 @@ const GraphVisualization = () => {
     setFilteredNodes(filtered);
   }, [searchTerm, data.nodes]);
 
-  // Previous helper functions remain the same...
   const prepareEdgeConnections = (selectedNode, edges) => {
     if (!selectedNode) return [];
     
@@ -197,7 +214,7 @@ const GraphVisualization = () => {
     <div className="min-vh-100 bg-dark text-light" style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="flex-grow-1 d-flex">
         {/* Sidebar */}
-        <div className="border-end border-secondary p-4" style={{ width: '280px', background: '#1a1b26' }}>
+        <div className="border-end border-secondary p-4" style={{ width: '320px', background: '#1a1b26', overflowY: 'auto' }}>
           <div className="mb-4">
             <h5 className="text-light mb-3">Graph Controls</h5>
             <div className="position-relative mb-3">
@@ -226,23 +243,19 @@ const GraphVisualization = () => {
               )}
             </div>
             <button 
-              className="btn btn-outline-info w-100"
+              className="btn btn-outline-info w-100 mb-4"
               onClick={() => setSelectedNode(null)}
             >
               Reset Selection
             </button>
           </div>
           
-          <div className="mb-4">
-            <h6 className="text-light">Statistics</h6>
-            <div className="text-muted">
-              <p className="mb-2">Total Nodes: {data.nodes.length}</p>
-              <p className="mb-2">Total Edges: {data.edges.length}</p>
-              {selectedNode && (
-                <p className="mb-2">Connected Edges: {getConnectedEdges(selectedNode.id).length}</p>
-              )}
-            </div>
-          </div>
+          <NetworkStatistics 
+            data={data}
+            statistics={statistics}
+            selectedNode={selectedNode}
+            getConnectedEdges={getConnectedEdges}
+          />
         </div>
 
         {/* Main Content */}
@@ -252,7 +265,7 @@ const GraphVisualization = () => {
               <h5 className="card-title mb-0 text-light">Network Graph</h5>
             </div>
             <div className="card-body p-0" style={{ background: '#1a1b26' }}>
-              <div style={{ height: '80%', minHeight: '500px' }}>
+              <div style={{ height: '100%', minHeight: '500px' }}>
                 {loading ? (
                   <div className="d-flex justify-content-center align-items-center h-100">
                     <div className="spinner-border text-info" role="status">
