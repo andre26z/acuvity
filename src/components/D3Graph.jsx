@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
 
 const D3Graph = ({
@@ -15,95 +15,7 @@ const D3Graph = ({
   const nodesRef = useRef(null);
   const linksRef = useRef(null);
   const labelsRef = useRef(null);
-  const particlesRef = useRef(null);
 
-  // Particle animation configuration
-  const PARTICLE_RADIUS = 3;
-  const PARTICLE_DURATION = 2000; // Duration in milliseconds
-
-  const createParticleData = useCallback((edge) => {
-    return {
-      source: edge.source,
-      target: edge.target,
-      startTime: Date.now(),
-      metric1: edge.metric1,
-      metric2: edge.metric2,
-    };
-  }, []);
-
-  const updateParticles = useCallback(() => {
-    if (!selectedNode || !particlesRef.current) return;
-
-    const relevantEdges = data.edges.filter(
-      (edge) =>
-        edge.source.id === selectedNode.id || edge.target.id === selectedNode.id
-    );
-
-    // Create new particles
-    relevantEdges.forEach((edge) => {
-      if (Math.random() < 0.1) {
-        // Control particle generation rate
-        const particle = createParticleData(edge);
-        const particleElement = particlesRef.current
-          .append("circle")
-          .attr("r", PARTICLE_RADIUS)
-          .attr(
-            "fill",
-            edge.source.id === selectedNode.id ? "#40c4ff" : "#ff9f40"
-          )
-          .attr("opacity", 0.7);
-
-        // Animate particle along the path
-        const startX = edge.source.x;
-        const startY = edge.source.y;
-        const endX = edge.target.x;
-        const endY = edge.target.y;
-
-        particleElement
-          .attr("cx", startX)
-          .attr("cy", startY)
-          .transition()
-          .duration(PARTICLE_DURATION)
-          .ease(d3.easeLinear)
-          .attr("cx", endX)
-          .attr("cy", endY)
-          .on("end", function () {
-            d3.select(this).remove();
-          });
-      }
-    });
-  }, [selectedNode, data.edges, createParticleData]);
-
-  const drag = useCallback(() => {
-    function dragstarted(event) {
-      if (!event.active && simulationRef.current) {
-        simulationRef.current.alphaTarget(0.3).restart();
-      }
-      event.subject.fx = event.subject.x;
-      event.subject.fy = event.subject.y;
-    }
-
-    function dragged(event) {
-      event.subject.fx = event.x;
-      event.subject.fy = event.y;
-    }
-
-    function dragended(event) {
-      if (!event.active && simulationRef.current) {
-        simulationRef.current.alphaTarget(0);
-      }
-      event.subject.fx = null;
-      event.subject.fy = null;
-    }
-
-    return d3
-      .drag()
-      .on("start", dragstarted)
-      .on("drag", dragged)
-      .on("end", dragended);
-  }, []);
-
-  // Initialize D3 visualization
   useEffect(() => {
     if (!svgRef.current || loading || !data.nodes.length) return;
 
@@ -121,7 +33,7 @@ const D3Graph = ({
 
       const zoom = d3
         .zoom()
-        .scaleExtent([0.1, 4])
+        .scaleExtent([0.5, 4])
         .on("zoom", (event) => {
           g.attr("transform", event.transform);
         });
@@ -130,13 +42,12 @@ const D3Graph = ({
 
       const g = svg.append("g");
 
-      // Create groups for links, nodes, labels, and particles
+      // Create groups for links, nodes, and labels
       linksRef.current = g.append("g").selectAll("line");
-      particlesRef.current = g.append("g"); // Container for particles
       nodesRef.current = g.append("g").selectAll("circle");
       labelsRef.current = g.append("g").selectAll("text");
 
-      // Initialize simulation
+      // Initialize a basic force simulation
       simulationRef.current = d3
         .forceSimulation()
         .force(
@@ -146,18 +57,14 @@ const D3Graph = ({
             .id((d) => d.id)
             .distance(100)
         )
-        .force("charge", d3.forceManyBody().strength(-300))
-        .force("center", d3.forceCenter(width / 2, height / 2))
-        .force(
-          "collision",
-          d3.forceCollide().radius((d) => d.radius + 5)
-        );
+        .force("charge", d3.forceManyBody().strength(-200))
+        .force("center", d3.forceCenter(width / 2, height / 2));
     }
 
     // Update the simulation with new data
     const simulation = simulationRef.current;
 
-    // Update links with gradients for data flow
+    // Update links
     linksRef.current = linksRef.current
       .data(data.edges)
       .join("line")
@@ -168,8 +75,7 @@ const D3Graph = ({
         }
         return "rgba(255,255,255,0.2)";
       })
-      .attr("stroke-width", (d) => Math.sqrt(d.weight))
-      .attr("marker-end", "url(#arrowhead)");
+      .attr("stroke-width", (d) => Math.sqrt(d.weight));
 
     // Update nodes
     nodesRef.current = nodesRef.current
@@ -192,8 +98,7 @@ const D3Graph = ({
       .on("click", (event, d) => {
         setSelectedNode(selectedNode?.id === d.id ? null : d);
         event.stopPropagation();
-      })
-      .call(drag());
+      });
 
     // Update labels
     labelsRef.current = labelsRef.current
@@ -204,11 +109,11 @@ const D3Graph = ({
       .attr("fill", "rgba(255,255,255,0.7)")
       .attr("dy", 20);
 
-    // Update simulation
+    // Apply forces to nodes and links
     simulation.nodes(data.nodes);
     simulation.force("link").links(data.edges);
 
-    // Initialize positions if needed
+    // Initialize node positions if they don't exist
     data.nodes.forEach((node) => {
       if (typeof node.x === "undefined" || typeof node.y === "undefined") {
         node.x = width / 2 + (Math.random() - 0.5) * 100;
@@ -229,25 +134,13 @@ const D3Graph = ({
       labelsRef.current.attr("x", (d) => d.x).attr("y", (d) => d.y);
     });
 
-    // Start particle animation loop
-    const animationInterval = setInterval(updateParticles, 100);
-
-    // Cleanup
+    // Cleanup function to stop the simulation on unmount
     return () => {
       if (simulation) {
         simulation.on("tick", null);
       }
-      clearInterval(animationInterval);
     };
-  }, [
-    data,
-    selectedNode,
-    searchTerm,
-    loading,
-    drag,
-    setSelectedNode,
-    updateParticles,
-  ]);
+  }, [data, selectedNode, searchTerm, loading, setSelectedNode]);
 
   return (
     <div className="w-100 h-100">
