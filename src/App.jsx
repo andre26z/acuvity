@@ -139,6 +139,12 @@ const GraphVisualization = () => {
         pointHoverRadius: 15,
         borderWidth: 2,
         borderColor: "rgba(255, 255, 255, 0.8)",
+        elements: {
+          point: {
+            radius: 8,
+            cursor: "pointer",
+          },
+        },
       },
       ...(selectedNode
         ? [
@@ -179,6 +185,11 @@ const GraphVisualization = () => {
         },
       },
     },
+    elements: {
+      point: {
+        hoverCursor: "pointer",
+      },
+    },
     plugins: {
       tooltip: {
         callbacks: {
@@ -202,12 +213,7 @@ const GraphVisualization = () => {
         display: false,
       },
     },
-    // Add these hover options
-    hover: {
-      mode: "nearest",
-      intersect: true,
-      cursor: "pointer",
-    },
+
     onClick: (event, elements) => {
       if (elements.length > 0) {
         const pointIndex = elements[0].index;
@@ -285,7 +291,7 @@ const GraphVisualization = () => {
 
         {/* Main Content */}
         <div
-          className="flex-grow-1 d-flex flex-column p-4"
+          className="flex-grow-1 d-flex flex-column p-4 "
           style={{ background: "#1a1b26" }}
         >
           <div
@@ -296,7 +302,7 @@ const GraphVisualization = () => {
               <h5 className="card-title mb-0 text-light">Network Graph</h5>
             </div>
             <div className="card-body p-0" style={{ background: "#1a1b26" }}>
-              <div style={{ height: "100%", minHeight: "400px" }}>
+              <div style={{ height: "100%" }}>
                 {loading ? (
                   <div className="d-flex justify-content-center align-items-center h-100">
                     <div className="spinner-border text-info" role="status">
@@ -315,61 +321,70 @@ const GraphVisualization = () => {
           </div>
 
           {selectedNode && (
-            <div className="card bg-dark border-secondary mt-auto">
+            <div className="card bg-dark border-secondary ">
               <div className="card-header bg-dark border-secondary">
                 <h5 className="card-title mb-0 text-light">
-                  Node Details: {selectedNode.name}
+                  {selectedNode
+                    ? `Node Details: ${selectedNode.name}`
+                    : "Node Details"}
                 </h5>
               </div>
               <div className="card-body">
-                <div className="row">
-                  <div className="col-md-6">
-                    <h6 className="text-info">Outgoing Connections</h6>
-                    <div className="list-group bg-dark">
-                      {getConnectedEdges(selectedNode.id)
-                        .filter((edge) => edge.source.id === selectedNode.id)
-                        .map((edge, i) => (
-                          <div
-                            key={i}
-                            className="list-group-item bg-dark text-light border-secondary"
-                          >
-                            <h6 className="mb-1">To: {edge.target.name}</h6>
-                            <p className="mb-1 small">
-                              Weight: {edge.weight.toFixed(2)}
-                            </p>
-                            <small className="text-muted">
-                              Metric 1: {edge.metric1.toFixed(2)}
-                              <br />
-                              Metric 2: {edge.metric2.toFixed(2)}
-                            </small>
-                          </div>
-                        ))}
+                {selectedNode ? (
+                  <div className="row">
+                    <div className="col-md-6">
+                      <h6 className="text-info">Outgoing Connections</h6>
+                      <div className="list-group bg-dark">
+                        {getConnectedEdges(selectedNode.id)
+                          .filter((edge) => edge.source.id === selectedNode.id)
+                          .map((edge, i) => (
+                            <div
+                              key={i}
+                              className="list-group-item bg-dark text-light border-secondary"
+                            >
+                              <h6 className="mb-1">To: {edge.target.name}</h6>
+                              <p className="mb-1 small">
+                                Weight: {edge.weight.toFixed(2)}
+                              </p>
+                              <small className="text-muted">
+                                Metric 1: {edge.metric1.toFixed(2)}
+                                <br />
+                                Metric 2: {edge.metric2.toFixed(2)}
+                              </small>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <h6 className="text-info">Incoming Connections</h6>
+                      <div className="list-group bg-dark">
+                        {getConnectedEdges(selectedNode.id)
+                          .filter((edge) => edge.target.id === selectedNode.id)
+                          .map((edge, i) => (
+                            <div
+                              key={i}
+                              className="list-group-item bg-dark text-light border-secondary"
+                            >
+                              <h6 className="mb-1">From: {edge.source.name}</h6>
+                              <p className="mb-1 small">
+                                Weight: {edge.weight.toFixed(2)}
+                              </p>
+                              <small className="text-muted">
+                                Metric 1: {edge.metric1.toFixed(2)}
+                                <br />
+                                Metric 2: {edge.metric2.toFixed(2)}
+                              </small>
+                            </div>
+                          ))}
+                      </div>
                     </div>
                   </div>
-                  <div className="col-md-6">
-                    <h6 className="text-info">Incoming Connections</h6>
-                    <div className="list-group bg-dark">
-                      {getConnectedEdges(selectedNode.id)
-                        .filter((edge) => edge.target.id === selectedNode.id)
-                        .map((edge, i) => (
-                          <div
-                            key={i}
-                            className="list-group-item bg-dark text-light border-secondary"
-                          >
-                            <h6 className="mb-1">From: {edge.source.name}</h6>
-                            <p className="mb-1 small">
-                              Weight: {edge.weight.toFixed(2)}
-                            </p>
-                            <small className="text-muted">
-                              Metric 1: {edge.metric1.toFixed(2)}
-                              <br />
-                              Metric 2: {edge.metric2.toFixed(2)}
-                            </small>
-                          </div>
-                        ))}
-                    </div>
+                ) : (
+                  <div className="text-center text-muted p-4">
+                    <h6>No node selected</h6>
+                    <p>Click on a node in the graph to view its details</p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
