@@ -1,71 +1,173 @@
-# Getting Started with Create React App
+# Network Graph Visualization Project
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview
 
-## Available Scripts
+This project demonstrates an interactive network graph visualization solution designed to handle large-scale node-edge relationships with extensive metadata. The implementation focuses on providing an intuitive user interface for exploring complex network data while maintaining performance and responsiveness.
 
-In the project directory, you can run:
+## Project Requirements
 
-### `npm start`
+### Data Structure
+- Input: JSONL format with 1000+ columns
+- Core attributes: source node, destination node
+- Additional attributes: ~998 metrics/attributes per edge
+- Scale: 
+  - Up to 100k edges
+  - Node count varies from 2 to 50k nodes
+  - Edge distribution can be highly concentrated or evenly spread
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Key Requirements
+1. Graph visualization
+2. Data browser for node details
+3. Focus on:
+   - User Experience
+   - Responsiveness
+   - Aesthetics
+   - Data management
+   - Code quality
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Solution Architecture
 
-### `npm test`
+### Technology Stack
+- **React**: Core framework for building the UI
+- **ChartJS**: Lightweight charting library for visualization
+- **Bootstrap**: Responsive design framework
+- **CSS**: Custom styling with dark theme
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Core Components
+1. **GraphVisualization**: Main container component
+2. **NetworkStatistics**: Statistics panel component
+3. **Scatter Plot**: Interactive node visualization
+4. **Data Browser**: Edge details viewer
 
-### `npm run build`
+## Features
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 1. Interactive Graph View
+- Scatter plot visualization of nodes
+- Interactive node selection
+- Visual highlighting of selected nodes
+- Connection lines display on node selection
+- Zoom and pan capabilities
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 2. Search & Navigation
+- Real-time node search functionality
+- Scrollable search results
+- Click-to-focus node selection
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 3. Data Browser
+- Split view of incoming/outgoing connections
+- Detailed edge metrics display
+- Scrollable data view for large datasets
 
-### `npm run eject`
+### 4. Network Statistics
+- Average connections
+- Maximum connections
+- Isolated nodes count
+- Real-time updates
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 5. Responsive Design
+- **Desktop View** (≥760px):
+  - Sidebar with controls and statistics
+  - Main graph view
+  - Node details panel
+- **Mobile View** (<760px):
+  - Full-width graph
+  - Condensed node details
+  - Statistics panel below
+  - Hidden search controls
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Data Management
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### State Management
+```javascript
+const [data, setData] = useState({ nodes: [], edges: [] });
+const [selectedNode, setSelectedNode] = useState(null);
+const [filteredNodes, setFilteredNodes] = useState([]);
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Data Processing
+- Node position calculation
+- Edge relationship mapping
+- Metric aggregation
+- Real-time filtering
 
-## Learn More
+## User Experience Considerations
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 1. Visual Design
+- Dark theme for reduced eye strain
+- Clear visual hierarchy
+- Consistent color coding
+- Interactive elements with hover states
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 2. Performance Optimizations
+- Lazy loading of data
+- Efficient filtering algorithms
+- Throttled search updates
+- Optimized rendering cycles
 
-### Code Splitting
+### 3. Accessibility
+- Keyboard navigation
+- Screen reader support
+- Clear visual feedback
+- Responsive text sizing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Code Quality
 
-### Analyzing the Bundle Size
+### 1. Component Structure
+- Clear separation of concerns
+- Modular design
+- Reusable components
+- Consistent naming conventions
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Technical Decisions & Tradeoffs
 
-### Making a Progressive Web App
+### Why ChartJS?
+- Lightweight and performant
+- Easy to customize
+- Good documentation
+- Active community
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Why Bootstrap?
+- Rapid development
+- Built-in responsive design
+- Consistent component styling
+- Extensive utility classes
 
-### Advanced Configuration
+### Performance vs Features
+- Focused on core functionality first
+- Implemented performance optimizations
+- Room for feature expansion
+- Maintainable codebase
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Summary
 
-### Deployment
+This solution addresses the challenge of visualizing and exploring large-scale network data through:
+1. Interactive visualization
+2. Efficient data management
+3. Responsive design
+4. Clean code architecture
+5. Scalable feature set
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+The implementation provides a solid foundation for handling both extreme cases (2 nodes with 100k edges or 50k nodes with distributed edges) while maintaining good performance and user experience.
 
-### `npm run build` fails to minify
+## Getting Started
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-# Acuvity test
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
+
+## License
+
+MIT License
