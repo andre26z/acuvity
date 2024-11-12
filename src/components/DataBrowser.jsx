@@ -6,7 +6,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
   if (!selectedNode) {
     return (
       <div className="card bg-dark border-secondary">
-        <div className="card-body text-center text-muted p-4">
+        <div className="card-body text-center text-light p-4">
           <p>Select a node to view data flow details</p>
         </div>
       </div>
@@ -37,7 +37,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
             {direction === "incoming" ? edge.source.name : edge.target.name}
           </span>
         </div>
-        <div className="d-flex align-items-center gap-1 text-muted">
+        <div className="d-flex align-items-center gap-1 text-light">
           <span>🕒</span>
           <span className="small text-white">
             {new Date(edge.timestamp).toLocaleTimeString()}
@@ -48,7 +48,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
       <div className="row g-4">
         <div className="col-4">
           <div className="d-flex flex-column">
-            <span className="text-muted small">Metric 1</span>
+            <span className="text-light small">Metric 1</span>
             <span className="text-light fw-medium">
               {edge.metric1.toFixed(2)}
             </span>
@@ -56,7 +56,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
         </div>
         <div className="col-4">
           <div className="d-flex flex-column">
-            <span className="text-muted small">Metric 2</span>
+            <span className="text-light small">Metric 2</span>
             <span className="text-light fw-medium">
               {edge.metric2.toFixed(2)}
             </span>
@@ -64,7 +64,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
         </div>
         <div className="col-4">
           <div className="d-flex flex-column">
-            <span className="text-muted small">Weight</span>
+            <span className="text-light small">Weight</span>
             <span className="text-light fw-medium">
               {edge.weight.toFixed(2)}
             </span>
@@ -110,7 +110,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
           {activeTab === "incoming" && (
             <div>
               {incomingEdges.length === 0 ? (
-                <div className="text-center text-muted py-4">
+                <div className="text-center text-light py-4">
                   No incoming data connections
                 </div>
               ) : (
@@ -124,7 +124,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
           {activeTab === "outgoing" && (
             <div>
               {outgoingEdges.length === 0 ? (
-                <div className="text-center text-muted py-4">
+                <div className="text-center text-light py-4">
                   No outgoing data connections
                 </div>
               ) : (
