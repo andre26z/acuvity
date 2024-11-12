@@ -51,6 +51,14 @@ const GraphVisualization = () => {
     isolatedNodes: 0,
   });
 
+  const getDisplayNodes = () => {
+    const limitedNodes = filteredNodes.slice(0, 5);
+    const remaining = filteredNodes.length - 5;
+    return {
+      nodes: limitedNodes,
+      remaining: remaining > 0 ? remaining : 0,
+    };
+  };
   const chartRef = useRef(null);
 
   useEffect(() => {
@@ -233,7 +241,7 @@ const GraphVisualization = () => {
 
   return (
     <div className="container-fluid p-0 bg-dark text-light min-vh-100">
-      <div className="row g-0">
+      <div className="row g-1">
         {/* Sidebar - Collapsible on mobile */}
         <div
           className="col-lg-3 col-md-4 border-end border-secondary"
