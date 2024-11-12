@@ -51,14 +51,6 @@ const GraphVisualization = () => {
     isolatedNodes: 0,
   });
 
-  const getDisplayNodes = () => {
-    const limitedNodes = filteredNodes.slice(0, 5);
-    const remaining = filteredNodes.length - 5;
-    return {
-      nodes: limitedNodes,
-      remaining: remaining > 0 ? remaining : 0,
-    };
-  };
   const chartRef = useRef(null);
 
   useEffect(() => {
@@ -275,12 +267,19 @@ const GraphVisualization = () => {
                   {searchTerm && filteredNodes.length > 0 && (
                     <div
                       className="position-absolute w-100 mt-1 bg-dark border border-secondary rounded shadow-sm"
-                      style={{ zIndex: 1000 }}
+                      style={{
+                        zIndex: 1000,
+                        maxHeight: "200px",
+                        overflowY: "auto",
+                      }}
                     >
                       {filteredNodes.map((node) => (
                         <div
                           key={node.id}
-                          className="p-2 border-bottom border-secondary cursor-pointer hover:bg-secondary"
+                          className="p-2 border-bottom border-secondary hover:bg-secondary"
+                          style={{
+                            cursor: "pointer",
+                          }}
                           onClick={() => {
                             setSelectedNode(node);
                             setSearchTerm("");
