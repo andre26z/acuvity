@@ -12,8 +12,10 @@ const D3Graph = ({
 }) => {
   const svgRef = useRef(null);
   const simulationRef = useRef(null);
+  const nodesRef = useRef(null);
+  const linksRef = useRef(null);
+  const labelsRef = useRef(null);
 
-  // Memoize drag function with simulation passed as parameter
   const drag = useCallback(() => {
     function dragstarted(event) {
       if (!event.active && simulationRef.current) {
@@ -47,60 +49,82 @@ const D3Graph = ({
   useEffect(() => {
     if (!svgRef.current || loading || !data.nodes.length) return;
 
-    // Stop any existing simulation
-    if (simulationRef.current) {
-      simulationRef.current.stop();
-    }
-
     const width = svgRef.current.parentElement.clientWidth;
     const height = svgRef.current.parentElement.clientHeight;
 
-    d3.select(svgRef.current).selectAll("*").remove();
+    // Only set up the SVG and simulation once
+    if (!simulationRef.current) {
+      d3.select(svgRef.current).selectAll("*").remove();
 
-    const svg = d3
-      .select(svgRef.current)
-      .attr("width", width)
-      .attr("height", height);
+      const svg = d3
+        .select(svgRef.current)
+        .attr("width", width)
+        .attr("height", height);
 
-    const zoom = d3
-      .zoom()
-      .scaleExtent([0.1, 4])
-      .on("zoom", (event) => {
-        g.attr("transform", event.transform);
-      });
+      const zoom = d3
+        .zoom()
+        .scaleExtent([0.1, 4])
+        .on("zoom", (event) => {
+          g.attr("transform", event.transform);
+        });
 
-    svg.call(zoom);
+      svg.call(zoom);
 
-    const g = svg.append("g");
+      const g = svg.append("g");
 
-    svg
-      .append("defs")
-      .append("marker")
-      .attr("id", "arrowhead")
-      .attr("viewBox", "-10 -5 10 10")
-      .attr("refX", 15)
-      .attr("refY", 0)
-      .attr("markerWidth", 8)
-      .attr("markerHeight", 8)
-      .attr("orient", "auto")
-      .append("path")
-      .attr("d", "M-10,-5L0,0L-10,5")
-      .attr("fill", "rgba(255,255,255,0.4)");
+      svg
+        .append("defs")
+        .append("marker")
+        .attr("id", "arrowhead")
+        .attr("viewBox", "-10 -5 10 10")
+        .attr("refX", 15)
+        .attr("refY", 0)
+        .attr("markerWidth", 8)
+        .attr("markerHeight", 8)
+        .attr("orient", "auto")
+        .append("path")
+        .attr("d", "M-10,-5L0,0L-10,5")
+        .attr("fill", "rgba(255,255,255,0.4)");
 
-    const links = g
-      .append("g")
-      .selectAll("line")
+      // Create groups for links, nodes, and labels
+      linksRef.current = g.append("g").selectAll("line");
+      nodesRef.current = g.append("g").selectAll("circle");
+      labelsRef.current = g.append("g").selectAll("text");
+
+      // Initialize simulation
+      simulationRef.current = d3
+        .forceSimulation()
+        .force(
+          "link",
+          d3
+            .forceLink()
+            .id((d) => d.id)
+            .distance(100)
+        )
+        .force("charge", d3.forceManyBody().strength(-300))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force(
+          "collision",
+          d3.forceCollide().radius((d) => d.radius + 5)
+        );
+    }
+
+    // Update the simulation with new data
+    const simulation = simulationRef.current;
+
+    // Update links
+    linksRef.current = linksRef.current
       .data(data.edges)
       .join("line")
       .attr("stroke", "rgba(255,255,255,0.2)")
       .attr("stroke-width", (d) => Math.sqrt(d.weight))
       .attr("marker-end", "url(#arrowhead)");
 
-    const nodes = g
-      .append("g")
-      .selectAll("circle")
+    // Update nodes
+    nodesRef.current = nodesRef.current
       .data(data.nodes)
       .join("circle")
+      .style("cursor", "pointer")
       .attr("r", (d) => d.radius)
       .attr("fill", (d) => {
         if (selectedNode?.id === d.id) return "rgba(64, 196, 255, 0.8)";
@@ -117,11 +141,11 @@ const D3Graph = ({
       .on("click", (event, d) => {
         setSelectedNode(selectedNode?.id === d.id ? null : d);
         event.stopPropagation();
-      });
+      })
+      .call(drag());
 
-    const labels = g
-      .append("g")
-      .selectAll("text")
+    // Update labels
+    labelsRef.current = labelsRef.current
       .data(data.nodes)
       .join("text")
       .text((d) => d.name)
@@ -129,42 +153,38 @@ const D3Graph = ({
       .attr("fill", "rgba(255,255,255,0.7)")
       .attr("dy", 20);
 
-    // Create and store the simulation
-    simulationRef.current = d3
-      .forceSimulation(data.nodes)
-      .force(
-        "link",
-        d3
-          .forceLink(data.edges)
-          .id((d) => d.id)
-          .distance(100)
-      )
-      .force("charge", d3.forceManyBody().strength(-300))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force(
-        "collision",
-        d3.forceCollide().radius((d) => d.radius + 5)
-      )
-      .on("tick", () => {
-        links
-          .attr("x1", (d) => d.source.x)
-          .attr("y1", (d) => d.source.y)
-          .attr("x2", (d) => d.target.x)
-          .attr("y2", (d) => d.target.y);
+    // Update simulation with new data without resetting positions
+    simulation.nodes(data.nodes);
+    simulation.force("link").links(data.edges);
 
-        nodes.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
+    // Only initialize positions if they haven't been set
+    data.nodes.forEach((node) => {
+      if (typeof node.x === "undefined" || typeof node.y === "undefined") {
+        node.x = width / 2 + (Math.random() - 0.5) * 100;
+        node.y = height / 2 + (Math.random() - 0.5) * 100;
+      }
+    });
 
-        labels.attr("x", (d) => d.x).attr("y", (d) => d.y);
-      });
+    // Update positions on tick
+    simulation.on("tick", () => {
+      linksRef.current
+        .attr("x1", (d) => d.source.x)
+        .attr("y1", (d) => d.source.y)
+        .attr("x2", (d) => d.target.x)
+        .attr("y2", (d) => d.target.y);
 
-    // Apply drag behavior to nodes
-    nodes.call(drag());
+      nodesRef.current.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
+
+      labelsRef.current.attr("x", (d) => d.x).attr("y", (d) => d.y);
+    });
+
+    // Reheat the simulation slightly when data changes
+    simulation.alpha(0.1).restart();
 
     // Cleanup function
     return () => {
-      if (simulationRef.current) {
-        simulationRef.current.stop();
-        simulationRef.current = null;
+      if (simulation) {
+        simulation.on("tick", null);
       }
     };
   }, [data, selectedNode, searchTerm, loading, drag, setSelectedNode]);
