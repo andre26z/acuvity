@@ -232,77 +232,91 @@ const GraphVisualization = () => {
   };
 
   return (
-    <div
-      className="min-vh-100 bg-dark text-light"
-      style={{ display: "flex", flexDirection: "column" }}
-    >
-      <div className="flex-grow-1 d-flex">
-        {/* Sidebar */}
+    <div className="container-fluid p-0 bg-dark text-light min-vh-100">
+      <div className="row g-0">
+        {/* Sidebar - Collapsible on mobile */}
         <div
-          className="border-end border-secondary p-4"
-          style={{ width: "320px", background: "#1a1b26", overflowY: "auto" }}
+          className="col-lg-3 col-md-4 border-end border-secondary"
+          style={{ background: "#1a1b26" }}
         >
-          <div className="mb-4">
-            <h5 className="text-light mb-3">Graph Controls</h5>
-            <div className="position-relative mb-3">
-              <input
-                type="text"
-                className="form-control bg-dark text-light border-secondary"
-                placeholder="Search nodes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              {searchTerm && filteredNodes.length > 0 && (
-                <div
-                  className="position-absolute w-100 mt-1 bg-dark border border-secondary rounded shadow-sm"
-                  style={{ zIndex: 1000 }}
-                >
-                  {filteredNodes.map((node) => (
-                    <div
-                      key={node.id}
-                      style={{ cursor: "pointer" }}
-                      className="p-2 border-bottom border-secondary cursor-pointer hover:bg-secondary"
-                      onClick={() => {
-                        setSelectedNode(node);
-                        setSearchTerm("");
-                      }}
-                    >
-                      {node.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="p-3">
+            {/* Collapse toggle for mobile */}
             <button
-              className="btn btn-outline-info w-100 mb-4"
-              onClick={() => setSelectedNode(null)}
+              className="btn btn-outline-info w-100 mb-3 d-lg-none"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#sidebarContent"
+              aria-expanded="false"
+              aria-controls="sidebarContent"
             >
-              Reset Selection
+              Toggle Controls
             </button>
-          </div>
 
-          <NetworkStatistics
-            data={data}
-            statistics={statistics}
-            selectedNode={selectedNode}
-            getConnectedEdges={getConnectedEdges}
-          />
+            {/* Collapsible content */}
+            <div className="collapse d-lg-block" id="sidebarContent">
+              <div className="mb-4">
+                <h5 className="text-light mb-3">Graph Controls</h5>
+                <div className="position-relative mb-3">
+                  <input
+                    type="text"
+                    className="form-control bg-dark text-light border-secondary"
+                    placeholder="Search nodes..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  {searchTerm && filteredNodes.length > 0 && (
+                    <div
+                      className="position-absolute w-100 mt-1 bg-dark border border-secondary rounded shadow-sm"
+                      style={{ zIndex: 1000 }}
+                    >
+                      {filteredNodes.map((node) => (
+                        <div
+                          key={node.id}
+                          className="p-2 border-bottom border-secondary cursor-pointer hover:bg-secondary"
+                          onClick={() => {
+                            setSelectedNode(node);
+                            setSearchTerm("");
+                          }}
+                        >
+                          {node.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="btn btn-outline-info w-100 mb-4"
+                  onClick={() => setSelectedNode(null)}
+                >
+                  Reset Selection
+                </button>
+              </div>
+
+              <NetworkStatistics
+                data={data}
+                statistics={statistics}
+                selectedNode={selectedNode}
+                getConnectedEdges={getConnectedEdges}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Main Content */}
-        <div
-          className="flex-grow-1 d-flex flex-column p-4 "
-          style={{ background: "#1a1b26" }}
-        >
+        <div className="col-lg-9 col-md-8">
           <div
-            className="card bg-dark border-secondary mb-4"
-            style={{ height: "70%" }}
+            className="p-3"
+            style={{ background: "#1a1b26", minHeight: "100vh" }}
           >
-            <div className="card-header bg-dark border-secondary">
-              <h5 className="card-title mb-0 text-light">Network Graph</h5>
-            </div>
-            <div className="card-body p-0" style={{ background: "#1a1b26" }}>
-              <div style={{ height: "100%" }}>
+            {/* Network Graph Card */}
+            <div className="card bg-dark border-secondary mb-3">
+              <div className="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-0 text-light">Network Graph</h5>
+              </div>
+              <div
+                className="card-body p-0"
+                style={{ background: "#1a1b26", height: "60vh" }}
+              >
                 {loading ? (
                   <div className="d-flex justify-content-center align-items-center h-100">
                     <div className="spinner-border text-info" role="status">
@@ -318,72 +332,80 @@ const GraphVisualization = () => {
                 )}
               </div>
             </div>
-          </div>
 
-          <div className="card bg-dark border-secondary ">
-            <div className="card-header bg-dark border-secondary">
-              <h5 className="card-title mb-0 text-light">
-                {selectedNode
-                  ? `Node Details: ${selectedNode.name}`
-                  : "Node Details"}
-              </h5>
-            </div>
-            <div className="card-body">
-              {selectedNode ? (
-                <div className="row">
-                  <div className="col-md-6">
-                    <h6 className="text-info">Outgoing Connections</h6>
-                    <div className="list-group bg-dark">
-                      {getConnectedEdges(selectedNode.id)
-                        .filter((edge) => edge.source.id === selectedNode.id)
-                        .map((edge, i) => (
-                          <div
-                            key={i}
-                            className="list-group-item bg-dark text-light border-secondary"
-                          >
-                            <h6 className="mb-1">To: {edge.target.name}</h6>
-                            <p className="mb-1 small">
-                              Weight: {edge.weight.toFixed(2)}
-                            </p>
-                            <small className="text-muted">
-                              Metric 1: {edge.metric1.toFixed(2)}
-                              <br />
-                              Metric 2: {edge.metric2.toFixed(2)}
-                            </small>
-                          </div>
-                        ))}
+            {/* Node Details Card */}
+            <div className="card bg-dark border-secondary">
+              <div className="card-header bg-dark border-secondary">
+                <h5 className="card-title mb-0 text-light">
+                  {selectedNode
+                    ? `Node Details: ${selectedNode.name}`
+                    : "Node Details"}
+                </h5>
+              </div>
+              <div
+                className="card-body"
+                style={{ maxHeight: "30vh", overflowY: "auto" }}
+              >
+                {selectedNode ? (
+                  <div className="row g-3">
+                    <div className="col-12 col-md-6">
+                      <h6 className="text-info">Outgoing Connections</h6>
+                      <div className="list-group bg-dark">
+                        {getConnectedEdges(selectedNode.id)
+                          .filter((edge) => edge.source.id === selectedNode.id)
+                          .map((edge, i) => (
+                            <div
+                              key={i}
+                              className="list-group-item bg-dark text-light border-secondary p-2"
+                            >
+                              <h6 className="mb-1 fs-6">
+                                To: {edge.target.name}
+                              </h6>
+                              <p className="mb-1 small">
+                                Weight: {edge.weight.toFixed(2)}
+                              </p>
+                              <small className="text-muted d-block">
+                                Metric 1: {edge.metric1.toFixed(2)}
+                                <br />
+                                Metric 2: {edge.metric2.toFixed(2)}
+                              </small>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                    <div className="col-12 col-md-6">
+                      <h6 className="text-info">Incoming Connections</h6>
+                      <div className="list-group bg-dark">
+                        {getConnectedEdges(selectedNode.id)
+                          .filter((edge) => edge.target.id === selectedNode.id)
+                          .map((edge, i) => (
+                            <div
+                              key={i}
+                              className="list-group-item bg-dark text-light border-secondary p-2"
+                            >
+                              <h6 className="mb-1 fs-6">
+                                From: {edge.source.name}
+                              </h6>
+                              <p className="mb-1 small">
+                                Weight: {edge.weight.toFixed(2)}
+                              </p>
+                              <small className="text-muted d-block">
+                                Metric 1: {edge.metric1.toFixed(2)}
+                                <br />
+                                Metric 2: {edge.metric2.toFixed(2)}
+                              </small>
+                            </div>
+                          ))}
+                      </div>
                     </div>
                   </div>
-                  <div className="col-md-6">
-                    <h6 className="text-info">Incoming Connections</h6>
-                    <div className="list-group bg-dark">
-                      {getConnectedEdges(selectedNode.id)
-                        .filter((edge) => edge.target.id === selectedNode.id)
-                        .map((edge, i) => (
-                          <div
-                            key={i}
-                            className="list-group-item bg-dark text-light border-secondary"
-                          >
-                            <h6 className="mb-1">From: {edge.source.name}</h6>
-                            <p className="mb-1 small">
-                              Weight: {edge.weight.toFixed(2)}
-                            </p>
-                            <small className="text-muted">
-                              Metric 1: {edge.metric1.toFixed(2)}
-                              <br />
-                              Metric 2: {edge.metric2.toFixed(2)}
-                            </small>
-                          </div>
-                        ))}
-                    </div>
+                ) : (
+                  <div className="text-center text-muted p-4">
+                    <h6>No node selected</h6>
+                    <p>Click on a node in the graph to view its details</p>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center text-muted p-4">
-                  <h6>No node selected</h6>
-                  <p>Click on a node in the graph to view its details</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
