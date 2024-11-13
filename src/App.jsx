@@ -16,7 +16,7 @@ const GraphVisualization = () => {
   });
 
   // Generate mock data with more connections
-  const generateMockData = useCallback((nodeCount = 2000) => {
+  const generateMockData = useCallback((nodeCount = 3000) => {
     const nodes = Array.from({ length: nodeCount }, (_, i) => ({
       id: `node${i}`,
       name: `Node ${i}`,
@@ -57,7 +57,7 @@ const GraphVisualization = () => {
     }
 
     // Add random connections
-    const targetEdgeCount = Math.min(nodeCount * 3, 3000);
+    const targetEdgeCount = Math.min(nodeCount * 3, 4000);
     let attempts = 0;
     const maxAttempts = targetEdgeCount * 2;
 
@@ -102,7 +102,7 @@ const GraphVisualization = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const newData = generateMockData(2000);
+        const newData = generateMockData(3000);
         setData(newData);
 
         const connectionCounts = newData.nodes.map((node) => {

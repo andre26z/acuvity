@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Graph from "graphology";
 import { SigmaContainer, useLoadGraph, useSigma } from "@react-sigma/core";
 import "@react-sigma/core/lib/react-sigma.min.css";
+import forceAtlas2 from "graphology-layout-forceatlas2";
 
 // Create a new component to handle interactions
 const GraphEvents = ({ setSelectedNode }) => {
@@ -35,15 +36,27 @@ const GraphEvents = ({ setSelectedNode }) => {
 
 const GraphLoader = ({ data, selectedNode }) => {
   const loadGraph = useLoadGraph();
+  const positionsRef = useRef(new Map());
 
   useEffect(() => {
     const graph = new Graph();
 
     // Add nodes
     data.nodes.forEach((node) => {
+      // Get cached position or create new one
+      let position;
+      if (!positionsRef.current.has(node.id)) {
+        position = {
+          x: Math.random() * 10 - 5, // Smaller range for initial positions
+          y: Math.random() * 10 - 5,
+        };
+        positionsRef.current.set(node.id, position);
+      } else {
+        position = positionsRef.current.get(node.id);
+      }
+
       graph.addNode(node.id, {
-        x: Math.random() * 500,
-        y: Math.random() * 500,
+        ...position,
         size: selectedNode && selectedNode.id === node.id ? 8 : 5,
         label: node.name || node.id,
         color:
@@ -69,6 +82,30 @@ const GraphLoader = ({ data, selectedNode }) => {
       }
     });
 
+    // Apply force-directed layout only on initial render
+    if (positionsRef.current.size === 0) {
+      const settings = {
+        iterations: 50,
+        settings: {
+          gravity: 1,
+          adjustSizes: true,
+          linLogMode: true,
+          strongGravityMode: true,
+          scalingRatio: 2,
+        },
+      };
+
+      forceAtlas2.assign(graph, settings);
+
+      // Store the calculated positions
+      graph.forEachNode((nodeId, attributes) => {
+        positionsRef.current.set(nodeId, {
+          x: attributes.x,
+          y: attributes.y,
+        });
+      });
+    }
+
     loadGraph(graph);
   }, [loadGraph, data, selectedNode]);
 
@@ -86,23 +123,7 @@ const SigmaGraph = ({ data, selectedNode, setSelectedNode, loading }) => {
 
   return (
     <div className="w-full" style={{ height: "600px" }}>
-      <SigmaContainer
-        style={{ height: "100%", width: "100%" }}
-        settings={{
-          defaultNodeColor: "#6272a4",
-          defaultEdgeColor: "#858481",
-          labelSize: 12,
-          labelWeight: "bold",
-          renderLabels: true,
-          minCameraRatio: 0.1,
-          maxCameraRatio: 1,
-          nodeProgramClasses: {},
-          nodeReducer: (node, data) => ({
-            ...data,
-            highlighted: selectedNode && selectedNode.id === node,
-          }),
-        }}
-      >
+      <SigmaContainer style={{ height: "100%", width: "100%" }} settings={{}}>
         <GraphLoader data={data} selectedNode={selectedNode} />
         <GraphEvents setSelectedNode={setSelectedNode} />
       </SigmaContainer>
