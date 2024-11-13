@@ -202,7 +202,7 @@ const SigmaGraph = ({
   selectedNode,
   setSelectedNode,
   loading,
-  getSampledEdges = (edges) => edges.filter((_, i) => i % 5 === 0), // Default sampling
+  getSampledEdges = (edges) => edges.filter((_, i) => i % 5 === 0),
 }) => {
   const [hoveredNode, setHoveredNode] = useState(null);
 
