@@ -50,11 +50,9 @@ const GraphVisualization: React.FC = () => {
         radius: 15,
       }));
 
-      // Use a Set to track existing edges
       const edgeSet = new Set<string>();
       const edges: Edge[] = [];
 
-      // Helper function to add edge if it doesn't exist
       const addEdgeIfNotExists = (source: number, target: number): boolean => {
         const edgeKey = `${source}-${target}`;
         const reverseEdgeKey = `${target}-${source}`;
@@ -91,9 +89,7 @@ const GraphVisualization: React.FC = () => {
         const source = Math.floor(Math.random() * nodeCount);
         let target = Math.floor(Math.random() * nodeCount);
 
-        // Avoid self-loops
         if (source !== target) {
-          // Add edge with distance-based probability
           const distance = Math.abs(target - source);
           const probability = 1 / (1 + distance / 100);
 
@@ -105,10 +101,10 @@ const GraphVisualization: React.FC = () => {
       }
 
       // Add hub connections
-      const hubCount = Math.floor(nodeCount * 0.01); // 1% of nodes are hubs
+      const hubCount = Math.floor(nodeCount * 0.01);
       for (let i = 0; i < hubCount; i++) {
         const hubIndex = Math.floor(Math.random() * nodeCount);
-        const connectionCount = Math.floor(nodeCount * 0.05); // 5% connections per hub
+        const connectionCount = Math.floor(nodeCount * 0.05);
 
         let hubAttempts = 0;
         while (hubAttempts < connectionCount * 2) {
@@ -168,71 +164,104 @@ const GraphVisualization: React.FC = () => {
   );
 
   return (
-    <div className="container-fluid p-0 bg-dark text-light min-vh-100">
-      <div className="row g-1">
-        {/* Sidebar */}
-        <div
-          className="col-md-3 d-none d-md-block border-end border-secondary"
-          style={{ background: "#1a1b26" }}
-        >
-          <div className="p-3">
-            <NetworkStatistics
-              data={data}
-              statistics={statistics}
-              selectedNode={selectedNode}
-              getConnectedEdges={getConnectedEdges}
-            />
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="col-12 col-md-9">
+    <div
+      className="min-vh-100 d-flex flex-column"
+      style={{
+        background: "#1a1b26",
+        minHeight: "100vh",
+        height: "100%",
+      }}
+    >
+      <div className="container-fluid p-0 flex-grow-1">
+        <div className="row g-1 h-100">
+          {/* Left Sidebar - Statistics (Desktop only) */}
           <div
-            className="p-3"
-            style={{ background: "#1a1b26", minHeight: "100vh" }}
+            className="col-md-2 d-none d-md-block border-end border-secondary"
+            style={{
+              background: "#1a1b26",
+              position: "sticky",
+              top: 0,
+              height: "100vh",
+              overflowY: "auto",
+            }}
           >
-            {/* Network Graph Card */}
-            <div className="card bg-dark border-secondary mb-3 mt-1">
-              <div className="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
-                <h5 className="card-title mb-0 text-light">Network Graph</h5>
-                <button
-                  className="btn btn-outline-info w-10"
-                  onClick={() => setSelectedNode(null)}
-                >
-                  Reset Selection
-                </button>
-              </div>
-              <div
-                className="card-body p-0"
-                style={{ background: "#1a1b26", height: "50vh" }}
-              >
-                <Suspense fallback={<div>Loading...</div>}>
-                  <SigmaGraph
-                    data={data}
-                    loading={loading}
-                    selectedNode={selectedNode}
-                    setSelectedNode={setSelectedNode}
-                  />
-                </Suspense>
-              </div>
+            <div className="p-3">
+              <NetworkStatistics
+                data={data}
+                statistics={statistics}
+                selectedNode={selectedNode}
+                getConnectedEdges={getConnectedEdges}
+              />
             </div>
+          </div>
 
-            {/* Data Browser Card */}
-            <DataBrowser
-              selectedNode={selectedNode}
-              getConnectedEdges={getConnectedEdges}
-            />
+          {/* Main Content Area */}
+          <div className="col-12 col-md-10 h-100">
+            <div className="p-3 h-100">
+              {/* Network Graph and Data Browser Container */}
+              <div className="row g-3 h-100">
+                {/* Network Graph Card */}
+                <div className="col-12 col-xl-7">
+                  <div className="card bg-dark border-secondary h-100">
+                    <div className="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                      <h5 className="card-title mb-0 text-light">
+                        Network Graph
+                      </h5>
+                      <button
+                        className="btn btn-outline-info btn-sm"
+                        onClick={() => setSelectedNode(null)}
+                      >
+                        Reset Selection
+                      </button>
+                    </div>
+                    <div
+                      className="card-body p-0 position-relative"
+                      style={{
+                        height: "calc(100vh - 200px)",
+                        overflowY: "auto",
+                      }}
+                    >
+                      <Suspense fallback={<div>Loading...</div>}>
+                        <SigmaGraph
+                          data={data}
+                          loading={loading}
+                          selectedNode={selectedNode}
+                          setSelectedNode={setSelectedNode}
+                        />
+                      </Suspense>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Mobile Statistics */}
-            <div className="d-md-none pt-2">
-              <div className="card bg-dark border-secondary">
-                <div className="card-body">
-                  <NetworkStatistics
-                    data={data}
-                    statistics={statistics}
-                    selectedNode={selectedNode}
-                    getConnectedEdges={getConnectedEdges}
-                  />
+                {/* Data Browser Card */}
+                <div className="col-12 col-xl-5 h-100">
+                  <div
+                    className="h-100"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      height: "calc(100vh - 200px)", // Match the Network Graph height
+                    }}
+                  >
+                    <DataBrowser
+                      selectedNode={selectedNode}
+                      getConnectedEdges={getConnectedEdges}
+                    />
+
+                    {/* Mobile Statistics */}
+                    <div className="d-md-none mt-3">
+                      <div className="card bg-dark border-secondary">
+                        <div className="card-body">
+                          <NetworkStatistics
+                            data={data}
+                            statistics={statistics}
+                            selectedNode={selectedNode}
+                            getConnectedEdges={getConnectedEdges}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,38 +1,102 @@
-.App {
-  text-align: center;
-}
+/* Add these styles to your App.css */
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+.visualization-container {
   min-height: 100vh;
+  background-color: #1a1b26;
+  color: white;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  width: 100%;
 }
 
-.App-link {
-  color: #61dafb;
+.visualization-content {
+  flex: 1;
+  width: 100%;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.visualization-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.statistics-sidebar {
+  width: 16.666667%; /* Equivalent to col-md-2 */
+  background-color: #1a1b26;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  min-height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  overflow-y: auto;
+}
+
+.statistics-wrapper {
+  padding: 1rem;
+  height: 100%;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 16.666667%; /* Same as statistics-sidebar width */
+  width: calc(100% - 16.666667%);
+  min-height: 100vh;
+}
+
+.content-wrapper {
+  padding: 1rem;
+  height: 100%;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  height: 100%;
+}
+
+@media (min-width: 1200px) {
+  .content-grid {
+    grid-template-columns: 58.333333% 41.666667%; /* Equivalent to col-xl-7 and col-xl-5 */
   }
-  to {
-    transform: rotate(360deg);
+}
+
+.graph-section {
+  height: 100%;
+}
+
+.graph-container {
+  height: calc(100vh - 200px);
+  position: relative;
+}
+
+.browser-section {
+  height: 100%;
+}
+
+/* Mobile styles */
+@media (max-width: 767.98px) {
+  .main-content {
+    margin-left: 0;
+    width: 100%;
   }
+  
+  .mobile-statistics {
+    background-color: #1a1b26;
+  }
+}
+
+/* Ensure all card backgrounds maintain dark theme */
+.card {
+  background-color: #1a1b26 !important;
+}
+
+/* Update your existing body styles */
+body, html {
+  background-color: #1a1b26;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }

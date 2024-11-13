@@ -307,8 +307,10 @@ const DataBrowser: React.FC<DataBrowserProps> = ({
         <div
           className="tab-content"
           style={{
-            maxHeight: "400px",
+            height: "630px", // Fixed height
             overflowY: "auto",
+            overflowX: "hidden",
+            paddingRight: "5px", // Add some padding for the scrollbar
           }}
         >
           {showHighVolume && highVolumeData ? (
