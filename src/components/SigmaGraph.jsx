@@ -4,7 +4,6 @@ import { SigmaContainer, useLoadGraph, useSigma } from "@react-sigma/core";
 import "@react-sigma/core/lib/react-sigma.min.css";
 import forceAtlas2 from "graphology-layout-forceatlas2";
 
-// Create a new component to handle interactions
 const GraphEvents = ({ setSelectedNode, setHoveredNode }) => {
   const sigma = useSigma();
 
@@ -97,8 +96,8 @@ const GraphLoader = ({ data, selectedNode, hoveredNode, getSampledEdges }) => {
       let position;
       if (!positionsRef.current.has(node.id)) {
         position = {
-          x: Math.random() * 10 - 5,
-          y: Math.random() * 10 - 5,
+          x: Math.random() * 1500 - 400,
+          y: Math.random() * 800 - 400,
         };
         positionsRef.current.set(node.id, position);
       } else {
