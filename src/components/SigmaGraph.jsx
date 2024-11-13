@@ -227,9 +227,9 @@ const SigmaGraph = ({
         }}
         settings={{
           minCameraRatio: 0.1,
-          maxCameraRatio: 0.8,
+          maxCameraRatio: 1,
           defaultNodeType: "circle",
-          defaultEdgeType: "line",
+          defaultEdgeType: "arrow",
           labelWeight: "bold",
           hideEdgesOnMove: true,
           renderLabels: false,
