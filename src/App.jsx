@@ -146,7 +146,7 @@ const GraphVisualization = () => {
         <div className="row g-1 h-100">
           {/* Left Sidebar - Statistics (Desktop only) */}
           <div
-            className="col-md-2 d-none d-md-block border-end border-secondary"
+            className="col-xl-2 d-none d-xl-block border-end border-secondary" // Changed from col-md-2 d-md-block
             style={{
               background: "#1a1b26",
               position: "sticky",
@@ -166,7 +166,7 @@ const GraphVisualization = () => {
           </div>
 
           {/* Main Content Area */}
-          <div className="col-12 col-md-10 h-100">
+          <div className="col-12 col-xl-10 h-100">
             <div className="p-3 h-100">
               {/* Network Graph and Data Browser Container */}
               <div className="row g-3 h-100">
@@ -219,7 +219,7 @@ const GraphVisualization = () => {
                     />
 
                     {/* Mobile Statistics */}
-                    <div className="d-md-none mt-3">
+                    <div className="d-xl-none mt-3">
                       <div className="card bg-dark border-secondary">
                         <div className="card-body">
                           <NetworkStatistics
