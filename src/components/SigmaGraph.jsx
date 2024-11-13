@@ -94,17 +94,25 @@ const GraphLoader = ({ data, selectedNode, hoveredNode }) => {
         hoveredNode &&
         (sourceId === hoveredNode.id || targetId === hoveredNode.id);
 
+      // Check if this is an outgoing edge from the selected/hovered node
+      const isOutgoingSelected = selectedNode && sourceId === selectedNode.id;
+      const isOutgoingHovered = hoveredNode && sourceId === hoveredNode.id;
+
       // Only show edges connected to selected or hovered nodes
       const isVisible = isConnectedToSelected || isConnectedToHovered;
 
       if (graph.hasNode(sourceId) && graph.hasNode(targetId)) {
         graph.addEdge(sourceId, targetId, {
-          size: isVisible ? 2 : 0, // Hide edges by setting size to 0
-          color: isConnectedToSelected
-            ? "#ff5555"
+          size: isVisible ? 3 : 0, // Hide edges by setting size to 0
+          color: isOutgoingSelected
+            ? "#08afd1" // Outgoing from selected node
+            : isOutgoingHovered
+            ? "#08afd1" // Outgoing from hovered node
+            : isConnectedToSelected
+            ? "#dba604" // Incoming to selected node
             : isConnectedToHovered
-            ? "#ff8855"
-            : "#fff",
+            ? "#dba604" // Incoming to hovered node
+            : "#000",
           hidden: !isVisible, // Additional property to ensure edge is hidden
         });
       }
@@ -145,24 +153,28 @@ const SigmaGraph = ({ data, selectedNode, setSelectedNode, loading }) => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-[600px]">
+      <div className="flex justify-center items-center h-[700px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
       </div>
     );
   }
 
   return (
-    <div className="w-full" style={{ height: "600px" }}>
+    <div className="w-full h-100">
       <SigmaContainer
-        style={{ height: "100%", width: "100%" }}
+        style={{
+          height: "100%",
+          width: "100%",
+          background: "#1a1B26",
+        }}
         settings={{
           minCameraRatio: 0.1,
-          maxCameraRatio: 2,
+          maxCameraRatio: 0.8,
           defaultNodeType: "circle",
           defaultEdgeType: "line",
-          labelSize: 12,
+
           labelWeight: "bold",
-          renderLabels: true,
+
           hideEdgesOnMove: false,
         }}
       >
