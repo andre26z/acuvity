@@ -1,7 +1,12 @@
-import React from 'react';
-import StatisticsCard from './StatisticsCard';
+import React from "react";
+import StatisticsCard from "./StatisticsCard";
 
-const NetworkStatistics = ({ data, statistics, selectedNode, getConnectedEdges }) => {
+const NetworkStatistics = ({
+  data,
+  statistics,
+  selectedNode,
+  getConnectedEdges,
+}) => {
   return (
     <div>
       <h5 className="text-light mb-3">Network Statistics</h5>

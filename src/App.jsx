@@ -16,12 +16,12 @@ const GraphVisualization = () => {
   });
 
   // Generate mock data with more connections
-  const generateMockData = useCallback((nodeCount = 500) => {
+  const generateMockData = useCallback((nodeCount = 1000) => {
     const nodes = Array.from({ length: nodeCount }, (_, i) => ({
       id: `node${i}`,
       name: `Node ${i}`,
       group: Math.floor(Math.random() * 5),
-      radius: 8,
+      radius: 15,
     }));
 
     // Use a Set to track existing edges
@@ -101,7 +101,7 @@ const GraphVisualization = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const newData = generateMockData(500);
+        const newData = generateMockData(1000);
         setData(newData);
 
         const connectionCounts = newData.nodes.map((node) => {
