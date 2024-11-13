@@ -1,12 +1,61 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
-const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
-  const [activeTab, setActiveTab] = useState("incoming");
-  const [displayCount, setDisplayCount] = useState(5);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showHighVolume, setShowHighVolume] = useState(false);
-  const [highVolumeData, setHighVolumeData] = useState(null);
-  const [sampleSize, setSampleSize] = useState(20);
+interface Node {
+  id: string;
+  name: string;
+}
+
+interface Edge {
+  source: Node;
+  target: Node;
+  timestamp: string;
+  metric1: number;
+  metric2: number;
+  weight: number;
+}
+
+interface HighVolumeData {
+  metrics: Edge[];
+  summary: {
+    totalConnections: number;
+    averageMetric1: string;
+    averageMetric2: string;
+    averageWeight: string;
+    timeRange: {
+      start: string;
+      end: string;
+    };
+  };
+}
+
+interface DataBrowserProps {
+  selectedNode: Node | null;
+  getConnectedEdges: (nodeId: string) => Edge[];
+}
+
+interface DataFlowItemProps {
+  edge: Edge;
+  direction: "incoming" | "outgoing";
+}
+
+interface HighVolumeSummaryProps {
+  summary: HighVolumeData["summary"];
+}
+
+const DataBrowser: React.FC<DataBrowserProps> = ({
+  selectedNode,
+  getConnectedEdges,
+}) => {
+  const [activeTab, setActiveTab] = useState<"incoming" | "outgoing">(
+    "incoming"
+  );
+  const [displayCount, setDisplayCount] = useState<number>(5);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showHighVolume, setShowHighVolume] = useState<boolean>(false);
+  const [highVolumeData, setHighVolumeData] = useState<HighVolumeData | null>(
+    null
+  );
+  const [sampleSize, setSampleSize] = useState<number>(20);
 
   // Reset states when selected node changes
   useEffect(() => {
@@ -21,8 +70,8 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
     setDisplayCount(5);
   }, [activeTab]);
 
-  const generateHighVolumeData = () => {
-    const mockMetrics = Array.from({ length: 100000 }, (_, index) => ({
+  const generateHighVolumeData = (): HighVolumeData => {
+    const mockMetrics: Edge[] = Array.from({ length: 100000 }, (_, index) => ({
       timestamp: new Date(
         Date.now() - Math.random() * 10000000000
       ).toISOString(),
@@ -49,10 +98,10 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
       ).toFixed(2),
       timeRange: {
         start: new Date(
-          Math.min(...mockMetrics.map((m) => new Date(m.timestamp)))
+          Math.min(...mockMetrics.map((m) => new Date(m.timestamp).getTime()))
         ).toLocaleString(),
         end: new Date(
-          Math.max(...mockMetrics.map((m) => new Date(m.timestamp)))
+          Math.max(...mockMetrics.map((m) => new Date(m.timestamp).getTime()))
         ).toLocaleString(),
       },
     };
@@ -60,7 +109,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
     return { metrics: mockMetrics, summary };
   };
 
-  const handleLoadHighVolume = () => {
+  const handleLoadHighVolume = (): void => {
     setIsLoading(true);
     // Simulate loading delay
     setTimeout(() => {
@@ -71,7 +120,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
     }, 500);
   };
 
-  const handleLoadMore = () => {
+  const handleLoadMore = (): void => {
     setIsLoading(true);
     setTimeout(() => {
       setDisplayCount((prev) => prev + 20);
@@ -79,7 +128,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
     }, 300);
   };
 
-  const handleLoadMoreSamples = () => {
+  const handleLoadMoreSamples = (): void => {
     setIsLoading(true);
     setTimeout(() => {
       setSampleSize((prev) => Math.min(prev + 50, 1000)); // Limit to 1000 samples max
@@ -109,7 +158,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
   const displayedEdges = currentEdges.slice(0, displayCount);
   const hasMore = displayCount < currentEdges.length;
 
-  const DataFlowItem = ({ edge, direction }) => (
+  const DataFlowItem: React.FC<DataFlowItemProps> = ({ edge, direction }) => (
     <div
       className="border border-secondary rounded p-3 mb-2"
       style={{ background: "#1a1b26" }}
@@ -162,7 +211,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
     </div>
   );
 
-  const HighVolumeSummary = ({ summary }) => (
+  const HighVolumeSummary: React.FC<HighVolumeSummaryProps> = ({ summary }) => (
     <div
       className="border border-secondary rounded p-4 mb-3"
       style={{ background: "#1a1b26" }}
