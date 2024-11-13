@@ -1,4 +1,48 @@
 # Network Graph Visualization Application
+# Network Graph Visualization Application
+
+[![Deployed App](https://img.shields.io/badge/Live%20Demo-Vercel-blue)](https://acuvity.vercel.app/)
+
+## Table of Contents
+- [Installation](#installation)
+- [Project Overview](#project-overview)
+- [Key Features](#key-features)
+- [Implementation Details](#implementation-details)
+- [Performance Optimizations](#performance-optimizations)
+- [Code Quality](#code-quality)
+- [UI/UX Considerations](#uiux-considerations)
+- [Conclusion](#conclusion)
+
+## Installation
+
+### Prerequisites
+- Node.js (version 16.x or higher)
+- npm or yarn package manager
+
+### Installation Steps
+
+1. Clone the repository
+```bash
+git clone <your-repository-url>
+cd <repository-name>
+
+npm install
+# or
+yarn install
+
+npm run dev
+# or
+yarn dev
+
+npm run build
+# or
+yarn build
+
+npm run start
+# or
+yarn start
+```
+
 ## Architecture and Implementation Documentation
 
 ### Project Overview
