@@ -1,9 +1,39 @@
 import React, { useEffect } from "react";
 import Graph from "graphology";
-import { SigmaContainer, useLoadGraph } from "@react-sigma/core";
+import { SigmaContainer, useLoadGraph, useSigma } from "@react-sigma/core";
 import "@react-sigma/core/lib/react-sigma.min.css";
 
-const GraphLoader = ({ data }) => {
+// Create a new component to handle interactions
+const GraphEvents = ({ setSelectedNode }) => {
+  const sigma = useSigma();
+
+  useEffect(() => {
+    // Register click events
+    sigma.on("clickNode", (event) => {
+      const node = event.node;
+      const nodeAttributes = sigma.getGraph().getNodeAttributes(node);
+      setSelectedNode({
+        id: node,
+        name: nodeAttributes.label,
+      });
+    });
+
+    // Register stage click to clear selection
+    sigma.on("clickStage", () => {
+      setSelectedNode(null);
+    });
+
+    // Cleanup listeners on unmount
+    return () => {
+      sigma.removeAllListeners("clickNode");
+      sigma.removeAllListeners("clickStage");
+    };
+  }, [sigma, setSelectedNode]);
+
+  return null;
+};
+
+const GraphLoader = ({ data, selectedNode }) => {
   const loadGraph = useLoadGraph();
 
   useEffect(() => {
@@ -12,11 +42,12 @@ const GraphLoader = ({ data }) => {
     // Add nodes
     data.nodes.forEach((node) => {
       graph.addNode(node.id, {
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: 8,
+        x: Math.random() * 500,
+        y: Math.random() * 500,
+        size: selectedNode && selectedNode.id === node.id ? 8 : 5,
         label: node.name || node.id,
-        color: "#6272a4",
+        color:
+          selectedNode && selectedNode.id === node.id ? "#ff5555" : "#6272a4",
       });
     });
 
@@ -26,22 +57,25 @@ const GraphLoader = ({ data }) => {
         typeof edge.source === "object" ? edge.source.id : edge.source;
       const targetId =
         typeof edge.target === "object" ? edge.target.id : edge.target;
+      const isConnected =
+        selectedNode &&
+        (sourceId === selectedNode.id || targetId === selectedNode.id);
 
       if (graph.hasNode(sourceId) && graph.hasNode(targetId)) {
         graph.addEdge(sourceId, targetId, {
-          size: 1,
-          color: "#858481",
+          size: isConnected ? 2 : 1,
+          color: isConnected ? "#ff5555" : "#858481",
         });
       }
     });
 
     loadGraph(graph);
-  }, [loadGraph, data]);
+  }, [loadGraph, data, selectedNode]);
 
   return null;
 };
 
-const SigmaGraph = ({ data, loading }) => {
+const SigmaGraph = ({ data, selectedNode, setSelectedNode, loading }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[600px]">
@@ -56,15 +90,21 @@ const SigmaGraph = ({ data, loading }) => {
         style={{ height: "100%", width: "100%" }}
         settings={{
           defaultNodeColor: "#6272a4",
-          defaultEdgeColor: "#0000",
+          defaultEdgeColor: "#858481",
           labelSize: 12,
           labelWeight: "bold",
           renderLabels: true,
-          minCameraRatio: 0.4,
+          minCameraRatio: 0.1,
           maxCameraRatio: 1,
+          nodeProgramClasses: {},
+          nodeReducer: (node, data) => ({
+            ...data,
+            highlighted: selectedNode && selectedNode.id === node,
+          }),
         }}
       >
-        <GraphLoader data={data} />
+        <GraphLoader data={data} selectedNode={selectedNode} />
+        <GraphEvents setSelectedNode={setSelectedNode} />
       </SigmaContainer>
     </div>
   );

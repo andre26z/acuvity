@@ -13,11 +13,11 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
     );
   }
 
-  const incomingEdges = getConnectedEdges(selectedNode.id).filter(
+  const connectedEdges = getConnectedEdges(selectedNode.id);
+  const incomingEdges = connectedEdges.filter(
     (edge) => edge.target.id === selectedNode.id
   );
-
-  const outgoingEdges = getConnectedEdges(selectedNode.id).filter(
+  const outgoingEdges = connectedEdges.filter(
     (edge) => edge.source.id === selectedNode.id
   );
 
@@ -82,7 +82,6 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
         </h5>
       </div>
       <div className="card-body">
-        {/* Custom Tabs */}
         <div className="d-flex mb-3">
           <button
             className={`btn flex-grow-1 me-2 ${
@@ -101,8 +100,6 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
             Outgoing Data ({outgoingEdges.length})
           </button>
         </div>
-
-        {/* Tab Content */}
         <div
           className="tab-content"
           style={{ maxHeight: "400px", overflowY: "auto" }}
@@ -120,7 +117,6 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
               )}
             </div>
           )}
-
           {activeTab === "outgoing" && (
             <div>
               {outgoingEdges.length === 0 ? (
