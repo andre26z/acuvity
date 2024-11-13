@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import NetworkStatistics from "./components/NetworkStatistics";
-import D3Graph from "./components/D3Graph";
+import SigmaGraph from "./components/SigmaGraph";
 import DataBrowser from "./components/DataBrowser";
 
 const GraphVisualization = () => {
@@ -15,8 +15,8 @@ const GraphVisualization = () => {
     isolatedNodes: 0,
   });
 
-  // Rest of your state and functions remain the same...
-  const generateMockData = useCallback((nodeCount = 50) => {
+  // Generate mock data with more connections
+  const generateMockData = useCallback((nodeCount = 2000) => {
     const nodes = Array.from({ length: nodeCount }, (_, i) => ({
       id: `node${i}`,
       name: `Node ${i}`,
@@ -24,31 +24,85 @@ const GraphVisualization = () => {
       radius: 8,
     }));
 
-    const edgeCount = Math.min(nodeCount * 2, 100);
-    const edges = Array.from({ length: edgeCount }, () => {
+    // Use a Set to track existing edges
+    const edgeSet = new Set();
+    const edges = [];
+
+    // Helper function to add edge if it doesn't exist
+    const addEdgeIfNotExists = (source, target) => {
+      const edgeKey = `${source}-${target}`;
+      const reverseEdgeKey = `${target}-${source}`;
+
+      if (!edgeSet.has(edgeKey) && !edgeSet.has(reverseEdgeKey)) {
+        edgeSet.add(edgeKey);
+        edges.push({
+          source: nodes[source],
+          target: nodes[target],
+          weight: Math.random() * 10,
+          metric1: Math.random() * 100,
+          metric2: Math.random() * 1000,
+          timestamp: new Date(
+            Date.now() - Math.random() * 10000000000
+          ).toISOString(),
+        });
+        return true;
+      }
+      return false;
+    };
+
+    // Create initial connections (ring topology)
+    for (let i = 0; i < nodes.length; i++) {
+      const nextIndex = (i + 1) % nodes.length;
+      addEdgeIfNotExists(i, nextIndex);
+    }
+
+    // Add random connections
+    const targetEdgeCount = Math.min(nodeCount * 3, 3000);
+    let attempts = 0;
+    const maxAttempts = targetEdgeCount * 2;
+
+    while (edges.length < targetEdgeCount && attempts < maxAttempts) {
       const source = Math.floor(Math.random() * nodeCount);
-      const target = Math.floor(Math.random() * nodeCount);
-      return {
-        source: nodes[source],
-        target: nodes[target],
-        weight: Math.random() * 10,
-        metric1: Math.random() * 100,
-        metric2: Math.random() * 1000,
-        timestamp: new Date(
-          Date.now() - Math.random() * 10000000000
-        ).toISOString(),
-      };
-    });
+      let target = Math.floor(Math.random() * nodeCount);
+
+      // Avoid self-loops
+      if (source !== target) {
+        // Add edge with distance-based probability
+        const distance = Math.abs(target - source);
+        const probability = 1 / (1 + distance / 100);
+
+        if (Math.random() < probability) {
+          addEdgeIfNotExists(source, target);
+        }
+      }
+      attempts++;
+    }
+
+    // Add hub connections
+    const hubCount = Math.floor(nodeCount * 0.01); // 1% of nodes are hubs
+    for (let i = 0; i < hubCount; i++) {
+      const hubIndex = Math.floor(Math.random() * nodeCount);
+      const connectionCount = Math.floor(nodeCount * 0.05); // 5% connections per hub
+
+      let hubAttempts = 0;
+      while (hubAttempts < connectionCount * 2) {
+        const target = Math.floor(Math.random() * nodeCount);
+        if (hubIndex !== target) {
+          addEdgeIfNotExists(hubIndex, target);
+        }
+        hubAttempts++;
+      }
+    }
 
     return { nodes, edges };
   }, []);
 
-  // Keep all your existing useEffects and functions...
+  // Rest of the component remains the same...
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const newData = generateMockData(50);
+        const newData = generateMockData(2000);
         setData(newData);
 
         const connectionCounts = newData.nodes.map((node) => {
@@ -75,6 +129,7 @@ const GraphVisualization = () => {
     loadData();
   }, [generateMockData]);
 
+  // Filter nodes based on search
   useEffect(() => {
     const filtered = data.nodes.filter((node) =>
       node.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -90,7 +145,6 @@ const GraphVisualization = () => {
     },
     [data.edges]
   );
-
   return (
     <div className="container-fluid p-0 bg-dark text-light min-vh-100">
       <div className="row g-1">
@@ -167,9 +221,8 @@ const GraphVisualization = () => {
                 className="card-body p-0"
                 style={{ background: "#1a1b26", height: "50vh" }}
               >
-                <D3Graph
+                <SigmaGraph
                   data={data}
-                  loading={loading}
                   selectedNode={selectedNode}
                   setSelectedNode={setSelectedNode}
                   searchTerm={searchTerm}
