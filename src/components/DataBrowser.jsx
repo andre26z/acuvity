@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
   const [activeTab, setActiveTab] = useState("incoming");
   const [displayCount, setDisplayCount] = useState(5);
-  const scrollContainerRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Reset display count when selected node changes
   useEffect(() => {
@@ -15,15 +15,13 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
     setDisplayCount(5);
   }, [activeTab]);
 
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } =
-        scrollContainerRef.current;
-      // Load more when user scrolls to bottom (with 20px threshold)
-      if (scrollHeight - scrollTop - clientHeight < 20) {
-        setDisplayCount((prev) => prev + 5);
-      }
-    }
+  const handleLoadMore = () => {
+    setIsLoading(true);
+    // Simulate loading delay
+    setTimeout(() => {
+      setDisplayCount((prev) => prev + 20);
+      setIsLoading(false);
+    }, 300);
   };
 
   if (!selectedNode) {
@@ -128,14 +126,11 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
           </button>
         </div>
         <div
-          ref={scrollContainerRef}
           className="tab-content"
           style={{
             maxHeight: "400px",
             overflowY: "auto",
-            scrollBehavior: "smooth",
           }}
-          onScroll={handleScroll}
         >
           {currentEdges.length === 0 ? (
             <div className="text-center text-light py-4">
@@ -151,8 +146,22 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
                 />
               ))}
               {hasMore && (
-                <div className="text-center text-light py-2 small">
-                  Scroll to load more...
+                <div className="text-center py-3">
+                  <button
+                    className={`btn ${
+                      activeTab === "incoming"
+                        ? "btn-outline-warning"
+                        : "btn-outline-info"
+                    }`}
+                    onClick={handleLoadMore}
+                    disabled={isLoading}
+                  >
+                    {isLoading
+                      ? "Loading..."
+                      : `Load More (${
+                          currentEdges.length - displayCount
+                        } remaining)`}
+                  </button>
                 </div>
               )}
             </>
