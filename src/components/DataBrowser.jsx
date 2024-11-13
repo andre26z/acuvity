@@ -268,11 +268,8 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
               <div className="mb-3">
                 <div className="d-flex justify-content-between align-items-center mb-2">
                   <h6 className="text-light mb-0">Sample Connections</h6>
-                  <span className="text-light small">
-                    Showing {sampleSize} of {highVolumeData.metrics.length}{" "}
-                    connections
-                  </span>
                 </div>
+
                 {highVolumeData.metrics
                   .slice(0, sampleSize)
                   .map((edge, index) => (
@@ -282,6 +279,10 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
                       direction={activeTab}
                     />
                   ))}
+                <span className="text-light small">
+                  Showing {sampleSize} of {highVolumeData.metrics.length}{" "}
+                  connections
+                </span>
                 {sampleSize < 1000 && (
                   <div className="text-center py-3">
                     <button
