@@ -1,7 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
   const [activeTab, setActiveTab] = useState("incoming");
+  const [displayCount, setDisplayCount] = useState(5);
+  const scrollContainerRef = useRef(null);
+
+  // Reset display count when selected node changes
+  useEffect(() => {
+    setDisplayCount(5);
+  }, [selectedNode?.id]);
+
+  // Reset display count when tab changes
+  useEffect(() => {
+    setDisplayCount(5);
+  }, [activeTab]);
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        scrollContainerRef.current;
+      // Load more when user scrolls to bottom (with 20px threshold)
+      if (scrollHeight - scrollTop - clientHeight < 20) {
+        setDisplayCount((prev) => prev + 5);
+      }
+    }
+  };
 
   if (!selectedNode) {
     return (
@@ -20,6 +43,10 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
   const outgoingEdges = connectedEdges.filter(
     (edge) => edge.source.id === selectedNode.id
   );
+
+  const currentEdges = activeTab === "incoming" ? incomingEdges : outgoingEdges;
+  const displayedEdges = currentEdges.slice(0, displayCount);
+  const hasMore = displayCount < currentEdges.length;
 
   const DataFlowItem = ({ edge, direction }) => (
     <div
@@ -101,34 +128,34 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
           </button>
         </div>
         <div
+          ref={scrollContainerRef}
           className="tab-content"
-          style={{ maxHeight: "400px", overflowY: "auto" }}
+          style={{
+            maxHeight: "400px",
+            overflowY: "auto",
+            scrollBehavior: "smooth",
+          }}
+          onScroll={handleScroll}
         >
-          {activeTab === "incoming" && (
-            <div>
-              {incomingEdges.length === 0 ? (
-                <div className="text-center text-light py-4">
-                  No incoming data connections
-                </div>
-              ) : (
-                incomingEdges.map((edge, index) => (
-                  <DataFlowItem key={index} edge={edge} direction="incoming" />
-                ))
-              )}
+          {currentEdges.length === 0 ? (
+            <div className="text-center text-light py-4">
+              No {activeTab} data connections
             </div>
-          )}
-          {activeTab === "outgoing" && (
-            <div>
-              {outgoingEdges.length === 0 ? (
-                <div className="text-center text-light py-4">
-                  No outgoing data connections
+          ) : (
+            <>
+              {displayedEdges.map((edge, index) => (
+                <DataFlowItem
+                  key={`${activeTab}-${index}-${edge.source.id}-${edge.target.id}`}
+                  edge={edge}
+                  direction={activeTab}
+                />
+              ))}
+              {hasMore && (
+                <div className="text-center text-light py-2 small">
+                  Scroll to load more...
                 </div>
-              ) : (
-                outgoingEdges.map((edge, index) => (
-                  <DataFlowItem key={index} edge={edge} direction="outgoing" />
-                ))
               )}
-            </div>
+            </>
           )}
         </div>
       </div>

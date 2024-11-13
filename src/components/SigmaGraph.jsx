@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Graph from "graphology";
 import { SigmaContainer, useLoadGraph, useSigma } from "@react-sigma/core";
 import "@react-sigma/core/lib/react-sigma.min.css";
@@ -19,17 +19,22 @@ const GraphEvents = ({ setSelectedNode, setHoveredNode }) => {
       });
     });
 
-    // Register hover events
+    // Register hover events with debouncing for better performance
+    let hoverTimeout;
     sigma.on("enterNode", (event) => {
+      clearTimeout(hoverTimeout);
       const node = event.node;
       const nodeAttributes = sigma.getGraph().getNodeAttributes(node);
-      setHoveredNode({
-        id: node,
-        name: nodeAttributes.label,
-      });
+      hoverTimeout = setTimeout(() => {
+        setHoveredNode({
+          id: node,
+          name: nodeAttributes.label,
+        });
+      }, 50); // Small delay to prevent rapid state updates
     });
 
     sigma.on("leaveNode", () => {
+      clearTimeout(hoverTimeout);
       setHoveredNode(null);
     });
 
@@ -40,6 +45,7 @@ const GraphEvents = ({ setSelectedNode, setHoveredNode }) => {
 
     // Cleanup listeners on unmount
     return () => {
+      clearTimeout(hoverTimeout);
       sigma.removeAllListeners();
     };
   }, [sigma, setSelectedNode, setHoveredNode]);
@@ -47,16 +53,47 @@ const GraphEvents = ({ setSelectedNode, setHoveredNode }) => {
   return null;
 };
 
-const GraphLoader = ({ data, selectedNode, hoveredNode }) => {
+const GraphLoader = ({ data, selectedNode, hoveredNode, getSampledEdges }) => {
   const loadGraph = useLoadGraph();
   const positionsRef = useRef(new Map());
+  const graphRef = useRef(null);
+
+  // Memoize edge processing
+  const processEdges = useCallback(
+    (edges, sourceId, targetId) => {
+      const isConnectedToSelected =
+        selectedNode &&
+        (sourceId === selectedNode.id || targetId === selectedNode.id);
+      const isConnectedToHovered =
+        hoveredNode &&
+        (sourceId === hoveredNode.id || targetId === hoveredNode.id);
+
+      const isOutgoingSelected = selectedNode && sourceId === selectedNode.id;
+      const isOutgoingHovered = hoveredNode && sourceId === hoveredNode.id;
+
+      return {
+        isVisible: isConnectedToSelected || isConnectedToHovered,
+        color: isOutgoingSelected
+          ? "#08afd1"
+          : isOutgoingHovered
+          ? "#08afd1"
+          : isConnectedToSelected
+          ? "#dba604"
+          : isConnectedToHovered
+          ? "#dba604"
+          : "#000",
+      };
+    },
+    [selectedNode, hoveredNode]
+  );
 
   useEffect(() => {
     const graph = new Graph();
+    graphRef.current = graph;
 
-    // Add nodes
+    // Add nodes with optimized attribute handling
+    const nodeAttributes = new Map();
     data.nodes.forEach((node) => {
-      // Get cached position or create new one
       let position;
       if (!positionsRef.current.has(node.id)) {
         position = {
@@ -71,7 +108,7 @@ const GraphLoader = ({ data, selectedNode, hoveredNode }) => {
       const isSelected = selectedNode && selectedNode.id === node.id;
       const isHovered = hoveredNode && hoveredNode.id === node.id;
 
-      graph.addNode(node.id, {
+      nodeAttributes.set(node.id, {
         ...position,
         size: isSelected || isHovered ? 8 : 5,
         label: node.name || node.id,
@@ -79,43 +116,43 @@ const GraphLoader = ({ data, selectedNode, hoveredNode }) => {
       });
     });
 
-    // Add edges with hidden state by default
-    data.edges.forEach((edge) => {
+    // Batch node addition
+    nodeAttributes.forEach((attrs, nodeId) => {
+      graph.addNode(nodeId, attrs);
+    });
+
+    // Sample edges when needed
+    let edgesToProcess = data.edges;
+    if (data.edges.length > 5000 && !selectedNode && !hoveredNode) {
+      edgesToProcess = getSampledEdges(data.edges);
+    }
+
+    // Batch edge addition with sampling
+    const edgeBatch = [];
+    edgesToProcess.forEach((edge) => {
       const sourceId =
         typeof edge.source === "object" ? edge.source.id : edge.source;
       const targetId =
         typeof edge.target === "object" ? edge.target.id : edge.target;
 
-      // Check if edge is connected to selected or hovered node
-      const isConnectedToSelected =
-        selectedNode &&
-        (sourceId === selectedNode.id || targetId === selectedNode.id);
-      const isConnectedToHovered =
-        hoveredNode &&
-        (sourceId === hoveredNode.id || targetId === hoveredNode.id);
-
-      // Check if this is an outgoing edge from the selected/hovered node
-      const isOutgoingSelected = selectedNode && sourceId === selectedNode.id;
-      const isOutgoingHovered = hoveredNode && sourceId === hoveredNode.id;
-
-      // Only show edges connected to selected or hovered nodes
-      const isVisible = isConnectedToSelected || isConnectedToHovered;
-
       if (graph.hasNode(sourceId) && graph.hasNode(targetId)) {
-        graph.addEdge(sourceId, targetId, {
-          size: isVisible ? 3 : 0, // Hide edges by setting size to 0
-          color: isOutgoingSelected
-            ? "#08afd1" // Outgoing from selected node
-            : isOutgoingHovered
-            ? "#08afd1" // Outgoing from hovered node
-            : isConnectedToSelected
-            ? "#dba604" // Incoming to selected node
-            : isConnectedToHovered
-            ? "#dba604" // Incoming to hovered node
-            : "#000",
-          hidden: !isVisible, // Additional property to ensure edge is hidden
+        const { isVisible, color } = processEdges(edge, sourceId, targetId);
+        edgeBatch.push({
+          source: sourceId,
+          target: targetId,
+          attributes: {
+            size: isVisible ? 3 : 0,
+            color,
+            hidden: !isVisible,
+            weight: edge.weight,
+          },
         });
       }
+    });
+
+    // Add edges in batch
+    edgeBatch.forEach(({ source, target, attributes }) => {
+      graph.addEdge(source, target, attributes);
     });
 
     // Apply force-directed layout only on initial render
@@ -143,24 +180,45 @@ const GraphLoader = ({ data, selectedNode, hoveredNode }) => {
     }
 
     loadGraph(graph);
-  }, [loadGraph, data, selectedNode, hoveredNode]);
+
+    return () => {
+      if (graphRef.current) {
+        graphRef.current.clear();
+      }
+    };
+  }, [
+    loadGraph,
+    data,
+    selectedNode,
+    hoveredNode,
+    processEdges,
+    getSampledEdges,
+  ]);
 
   return null;
 };
 
-const SigmaGraph = ({ data, selectedNode, setSelectedNode, loading }) => {
+const SigmaGraph = ({
+  data,
+  selectedNode,
+  setSelectedNode,
+  loading,
+  getSampledEdges = (edges) => edges.filter((_, i) => i % 5 === 0), // Default sampling
+}) => {
   const [hoveredNode, setHoveredNode] = useState(null);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-[700px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+      <div className="d-flex justify-content-center align-items-center h-100">
+        <div className="spinner-border text-info" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-100">
+    <div className="w-100 h-100">
       <SigmaContainer
         style={{
           height: "100%",
@@ -172,16 +230,20 @@ const SigmaGraph = ({ data, selectedNode, setSelectedNode, loading }) => {
           maxCameraRatio: 0.8,
           defaultNodeType: "circle",
           defaultEdgeType: "line",
-
           labelWeight: "bold",
-
-          hideEdgesOnMove: false,
+          hideEdgesOnMove: true,
+          renderLabels: false,
+          labelRenderedSizeThreshold: 12,
+          labelDensity: 0.5,
+          labelGridCellSize: 100,
+          zIndex: true,
         }}
       >
         <GraphLoader
           data={data}
           selectedNode={selectedNode}
           hoveredNode={hoveredNode}
+          getSampledEdges={getSampledEdges}
         />
         <GraphEvents
           setSelectedNode={setSelectedNode}
