@@ -2,9 +2,28 @@
 ## Architecture and Implementation Documentation
 
 ### Project Overview
-This application is designed to visualize and analyze large-scale network data containing up to 100k connections between nodes, with each connection carrying multiple metrics. The solution provides an interactive graph visualization alongside detailed data browsing capabilities.
+This application is designed to visualize and analyze large-scale network data with up to 100,000 connections between nodes, each carrying multiple metrics. The solution offers an interactive graph visualization alongside a detailed data browsing experience.
+
+After exploring libraries like Chart.js, D3, and Vis.js, I chose Sigma.js due to its lightweight nature and capability to handle larger datasets. However, no library available on the internet can truly render 100,000 nodes without impacting optimization and site performance. For this reason, I opted to demonstrate the concept figuratively within my data browser component, showing how I would efficiently handle and display a list with over 100,000 items to meet the task requirements without compromising user experience.
 
 ### Key Features
+
+#### Used Libraries
+
+## 1. Sigma.js (`@react-sigma/core`, `sigma`)
+* Sigma.js is used as the primary library for rendering interactive graph visualizations, chosen for its efficiency with larger datasets
+* Plugins from Sigma.js provide additional layout and rendering optimizations essential for high-node-count graphs
+
+## 2. Graphology (`graphology`, `graphology-layout-forceatlas2`)
+* Graphology is a graph library that integrates well with Sigma.js, providing tools for managing graph data and layouts
+* The ForceAtlas2 plugin enables efficient and attractive layouts, even with high-density node clusters
+
+## 3. React and Associated Libraries (`react`, `react-dom`, `@types/react`, `@types/react-dom`, `@testing-library/react`)
+* React serves as the primary framework for building the user interface, allowing for modular, reusable components
+* Associated libraries support type definitions, testing utilities, and rendering optimizations
+
+## 4. Bootstrap (`bootstrap`)
+* Bootstrap provides responsive layout utilities and a consistent design foundation, ensuring a clean and adaptable UI across devices
 
 #### 1. Graph Visualization Component
 - **Implementation**: Using Sigma.js for efficient graph rendering
