@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Graph from "graphology";
 import { SigmaContainer, useLoadGraph, useSigma } from "@react-sigma/core";
 import "@react-sigma/core/lib/react-sigma.min.css";
 import forceAtlas2 from "graphology-layout-forceatlas2";
 
 // Create a new component to handle interactions
-const GraphEvents = ({ setSelectedNode }) => {
+const GraphEvents = ({ setSelectedNode, setHoveredNode }) => {
   const sigma = useSigma();
 
   useEffect(() => {
@@ -19,6 +19,20 @@ const GraphEvents = ({ setSelectedNode }) => {
       });
     });
 
+    // Register hover events
+    sigma.on("enterNode", (event) => {
+      const node = event.node;
+      const nodeAttributes = sigma.getGraph().getNodeAttributes(node);
+      setHoveredNode({
+        id: node,
+        name: nodeAttributes.label,
+      });
+    });
+
+    sigma.on("leaveNode", () => {
+      setHoveredNode(null);
+    });
+
     // Register stage click to clear selection
     sigma.on("clickStage", () => {
       setSelectedNode(null);
@@ -26,15 +40,14 @@ const GraphEvents = ({ setSelectedNode }) => {
 
     // Cleanup listeners on unmount
     return () => {
-      sigma.removeAllListeners("clickNode");
-      sigma.removeAllListeners("clickStage");
+      sigma.removeAllListeners();
     };
-  }, [sigma, setSelectedNode]);
+  }, [sigma, setSelectedNode, setHoveredNode]);
 
   return null;
 };
 
-const GraphLoader = ({ data, selectedNode }) => {
+const GraphLoader = ({ data, selectedNode, hoveredNode }) => {
   const loadGraph = useLoadGraph();
   const positionsRef = useRef(new Map());
 
@@ -47,7 +60,7 @@ const GraphLoader = ({ data, selectedNode }) => {
       let position;
       if (!positionsRef.current.has(node.id)) {
         position = {
-          x: Math.random() * 10 - 5, // Smaller range for initial positions
+          x: Math.random() * 10 - 5,
           y: Math.random() * 10 - 5,
         };
         positionsRef.current.set(node.id, position);
@@ -55,29 +68,44 @@ const GraphLoader = ({ data, selectedNode }) => {
         position = positionsRef.current.get(node.id);
       }
 
+      const isSelected = selectedNode && selectedNode.id === node.id;
+      const isHovered = hoveredNode && hoveredNode.id === node.id;
+
       graph.addNode(node.id, {
         ...position,
-        size: selectedNode && selectedNode.id === node.id ? 8 : 5,
+        size: isSelected || isHovered ? 8 : 5,
         label: node.name || node.id,
-        color:
-          selectedNode && selectedNode.id === node.id ? "#ff5555" : "#6272a4",
+        color: isSelected ? "#ff5555" : isHovered ? "#ff8855" : "#6272a4",
       });
     });
 
-    // Add edges
+    // Add edges with hidden state by default
     data.edges.forEach((edge) => {
       const sourceId =
         typeof edge.source === "object" ? edge.source.id : edge.source;
       const targetId =
         typeof edge.target === "object" ? edge.target.id : edge.target;
-      const isConnected =
+
+      // Check if edge is connected to selected or hovered node
+      const isConnectedToSelected =
         selectedNode &&
         (sourceId === selectedNode.id || targetId === selectedNode.id);
+      const isConnectedToHovered =
+        hoveredNode &&
+        (sourceId === hoveredNode.id || targetId === hoveredNode.id);
+
+      // Only show edges connected to selected or hovered nodes
+      const isVisible = isConnectedToSelected || isConnectedToHovered;
 
       if (graph.hasNode(sourceId) && graph.hasNode(targetId)) {
         graph.addEdge(sourceId, targetId, {
-          size: isConnected ? 2 : 1,
-          color: isConnected ? "#ff5555" : "#858481",
+          size: isVisible ? 2 : 0, // Hide edges by setting size to 0
+          color: isConnectedToSelected
+            ? "#ff5555"
+            : isConnectedToHovered
+            ? "#ff8855"
+            : "#fff",
+          hidden: !isVisible, // Additional property to ensure edge is hidden
         });
       }
     });
@@ -107,12 +135,14 @@ const GraphLoader = ({ data, selectedNode }) => {
     }
 
     loadGraph(graph);
-  }, [loadGraph, data, selectedNode]);
+  }, [loadGraph, data, selectedNode, hoveredNode]);
 
   return null;
 };
 
 const SigmaGraph = ({ data, selectedNode, setSelectedNode, loading }) => {
+  const [hoveredNode, setHoveredNode] = useState(null);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[600px]">
@@ -123,9 +153,28 @@ const SigmaGraph = ({ data, selectedNode, setSelectedNode, loading }) => {
 
   return (
     <div className="w-full" style={{ height: "600px" }}>
-      <SigmaContainer style={{ height: "100%", width: "100%" }} settings={{}}>
-        <GraphLoader data={data} selectedNode={selectedNode} />
-        <GraphEvents setSelectedNode={setSelectedNode} />
+      <SigmaContainer
+        style={{ height: "100%", width: "100%" }}
+        settings={{
+          minCameraRatio: 0.1,
+          maxCameraRatio: 2,
+          defaultNodeType: "circle",
+          defaultEdgeType: "line",
+          labelSize: 12,
+          labelWeight: "bold",
+          renderLabels: true,
+          hideEdgesOnMove: false,
+        }}
+      >
+        <GraphLoader
+          data={data}
+          selectedNode={selectedNode}
+          hoveredNode={hoveredNode}
+        />
+        <GraphEvents
+          setSelectedNode={setSelectedNode}
+          setHoveredNode={setHoveredNode}
+        />
       </SigmaContainer>
     </div>
   );
