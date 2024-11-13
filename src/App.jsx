@@ -6,9 +6,7 @@ import DataBrowser from "./components/DataBrowser";
 const GraphVisualization = () => {
   const [data, setData] = useState({ nodes: [], edges: [] });
   const [selectedNode, setSelectedNode] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [filteredNodes, setFilteredNodes] = useState([]);
   const [statistics, setStatistics] = useState({
     avgConnections: 0,
     maxConnections: 0,
@@ -128,16 +126,6 @@ const GraphVisualization = () => {
     loadData();
   }, [generateMockData]);
 
-  // Filter nodes based on search and limit to 5 results
-  useEffect(() => {
-    const filtered = data.nodes
-      .filter((node) =>
-        node.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-      .slice(0, 5); // Limit to first 5 results
-    setFilteredNodes(filtered);
-  }, [searchTerm, data.nodes]);
-
   const getConnectedEdges = useCallback(
     (nodeId) => {
       return data.edges.filter(
@@ -156,43 +144,6 @@ const GraphVisualization = () => {
           style={{ background: "#1a1b26" }}
         >
           <div className="p-3">
-            <div className="mb-4">
-              <p className="text-light mb-3">Search Node</p>
-              <div className="position-relative mb-3">
-                <input
-                  type="text"
-                  className="form-control bg-dark text-light border-secondary"
-                  placeholder="Search nodes (shows top 5 results)..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                {searchTerm && filteredNodes.length > 0 && (
-                  <div
-                    className="position-absolute w-100 mt-1 bg-dark border border-secondary rounded shadow-sm"
-                    style={{
-                      zIndex: 1000,
-                      maxHeight: "200px",
-                      overflowY: "auto",
-                    }}
-                  >
-                    {filteredNodes.map((node) => (
-                      <div
-                        key={node.id}
-                        className="p-2 border-bottom border-secondary hover:bg-secondary"
-                        style={{ cursor: "pointer" }}
-                        onClick={() => {
-                          setSelectedNode(node);
-                          setSearchTerm("");
-                        }}
-                      >
-                        {node.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
             <NetworkStatistics
               data={data}
               statistics={statistics}
@@ -209,7 +160,7 @@ const GraphVisualization = () => {
             style={{ background: "#1a1b26", minHeight: "100vh" }}
           >
             {/* Network Graph Card */}
-            <div className="card bg-dark border-secondary mb-3">
+            <div className="card bg-dark border-secondary mb-3 mt-1">
               <div className="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0 text-light">Network Graph</h5>
                 <button
@@ -228,7 +179,6 @@ const GraphVisualization = () => {
                     data={data}
                     selectedNode={selectedNode}
                     setSelectedNode={setSelectedNode}
-                    searchTerm={searchTerm}
                   />
                 </Suspense>
               </div>
