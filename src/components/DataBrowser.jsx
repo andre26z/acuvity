@@ -4,10 +4,16 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
   const [activeTab, setActiveTab] = useState("incoming");
   const [displayCount, setDisplayCount] = useState(5);
   const [isLoading, setIsLoading] = useState(false);
+  const [showHighVolume, setShowHighVolume] = useState(false);
+  const [highVolumeData, setHighVolumeData] = useState(null);
+  const [sampleSize, setSampleSize] = useState(20);
 
-  // Reset display count when selected node changes
+  // Reset states when selected node changes
   useEffect(() => {
     setDisplayCount(5);
+    setShowHighVolume(false);
+    setHighVolumeData(null);
+    setSampleSize(20);
   }, [selectedNode?.id]);
 
   // Reset display count when tab changes
@@ -15,11 +21,68 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
     setDisplayCount(5);
   }, [activeTab]);
 
-  const handleLoadMore = () => {
+  const generateHighVolumeData = () => {
+    const mockMetrics = Array.from({ length: 100000 }, (_, index) => ({
+      timestamp: new Date(
+        Date.now() - Math.random() * 10000000000
+      ).toISOString(),
+      metric1: Math.random() * 1000,
+      metric2: Math.random() * 10000,
+      weight: Math.random() * 100,
+      source: { id: "node1", name: "High Volume Source" },
+      target: { id: "node2", name: "High Volume Target" },
+    }));
+
+    const summary = {
+      totalConnections: mockMetrics.length,
+      averageMetric1: (
+        mockMetrics.reduce((acc, curr) => acc + curr.metric1, 0) /
+        mockMetrics.length
+      ).toFixed(2),
+      averageMetric2: (
+        mockMetrics.reduce((acc, curr) => acc + curr.metric2, 0) /
+        mockMetrics.length
+      ).toFixed(2),
+      averageWeight: (
+        mockMetrics.reduce((acc, curr) => acc + curr.weight, 0) /
+        mockMetrics.length
+      ).toFixed(2),
+      timeRange: {
+        start: new Date(
+          Math.min(...mockMetrics.map((m) => new Date(m.timestamp)))
+        ).toLocaleString(),
+        end: new Date(
+          Math.max(...mockMetrics.map((m) => new Date(m.timestamp)))
+        ).toLocaleString(),
+      },
+    };
+
+    return { metrics: mockMetrics, summary };
+  };
+
+  const handleLoadHighVolume = () => {
     setIsLoading(true);
     // Simulate loading delay
     setTimeout(() => {
+      const data = generateHighVolumeData();
+      setHighVolumeData(data);
+      setShowHighVolume(true);
+      setIsLoading(false);
+    }, 500);
+  };
+
+  const handleLoadMore = () => {
+    setIsLoading(true);
+    setTimeout(() => {
       setDisplayCount((prev) => prev + 20);
+      setIsLoading(false);
+    }, 300);
+  };
+
+  const handleLoadMoreSamples = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setSampleSize((prev) => Math.min(prev + 50, 1000)); // Limit to 1000 samples max
       setIsLoading(false);
     }, 300);
   };
@@ -99,6 +162,57 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
     </div>
   );
 
+  const HighVolumeSummary = ({ summary }) => (
+    <div
+      className="border border-secondary rounded p-4 mb-3"
+      style={{ background: "#1a1b26" }}
+    >
+      <h6 className="text-light mb-3">High Volume Connection Summary</h6>
+      <div className="row g-3">
+        <div className="col-6 col-md-3">
+          <div className="d-flex flex-column">
+            <span className="text-light small">Total Connections</span>
+            <span className="text-light fw-medium">
+              {summary.totalConnections.toLocaleString()}
+            </span>
+          </div>
+        </div>
+        <div className="col-6 col-md-3">
+          <div className="d-flex flex-column">
+            <span className="text-light small">Avg Metric 1</span>
+            <span className="text-light fw-medium">
+              {summary.averageMetric1}
+            </span>
+          </div>
+        </div>
+        <div className="col-6 col-md-3">
+          <div className="d-flex flex-column">
+            <span className="text-light small">Avg Metric 2</span>
+            <span className="text-light fw-medium">
+              {summary.averageMetric2}
+            </span>
+          </div>
+        </div>
+        <div className="col-6 col-md-3">
+          <div className="d-flex flex-column">
+            <span className="text-light small">Avg Weight</span>
+            <span className="text-light fw-medium">
+              {summary.averageWeight}
+            </span>
+          </div>
+        </div>
+        <div className="col-12">
+          <div className="d-flex flex-column">
+            <span className="text-light small">Time Range</span>
+            <span className="text-light fw-medium">
+              {summary.timeRange.start} - {summary.timeRange.end}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="card bg-dark border-secondary">
       <div className="card-header border-secondary">
@@ -107,12 +221,15 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
         </h5>
       </div>
       <div className="card-body">
-        <div className="d-flex mb-3">
+        <div className="d-flex flex-wrap gap-2 mb-3">
           <button
-            className={`btn flex-grow-1 me-2 ${
+            className={`btn flex-grow-1 ${
               activeTab === "incoming" ? "btn-warning" : "btn-outline-warning"
             }`}
-            onClick={() => setActiveTab("incoming")}
+            onClick={() => {
+              setActiveTab("incoming");
+              setShowHighVolume(false);
+            }}
           >
             Incoming Data ({incomingEdges.length})
           </button>
@@ -120,11 +237,24 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
             className={`btn flex-grow-1 ${
               activeTab === "outgoing" ? "btn-info" : "btn-outline-info"
             }`}
-            onClick={() => setActiveTab("outgoing")}
+            onClick={() => {
+              setActiveTab("outgoing");
+              setShowHighVolume(false);
+            }}
           >
             Outgoing Data ({outgoingEdges.length})
           </button>
+          <button
+            className={`btn btn-outline-success w-100 ${
+              showHighVolume ? "active" : ""
+            }`}
+            onClick={handleLoadHighVolume}
+            disabled={isLoading}
+          >
+            {isLoading ? "Loading..." : "Load High Volume Data (100k lines)"}
+          </button>
         </div>
+
         <div
           className="tab-content"
           style={{
@@ -132,7 +262,42 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
             overflowY: "auto",
           }}
         >
-          {currentEdges.length === 0 ? (
+          {showHighVolume && highVolumeData ? (
+            <>
+              <HighVolumeSummary summary={highVolumeData.summary} />
+              <div className="mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <h6 className="text-light mb-0">Sample Connections</h6>
+                  <span className="text-light small">
+                    Showing {sampleSize} of {highVolumeData.metrics.length}{" "}
+                    connections
+                  </span>
+                </div>
+                {highVolumeData.metrics
+                  .slice(0, sampleSize)
+                  .map((edge, index) => (
+                    <DataFlowItem
+                      key={`high-volume-${index}`}
+                      edge={edge}
+                      direction={activeTab}
+                    />
+                  ))}
+                {sampleSize < 1000 && (
+                  <div className="text-center py-3">
+                    <button
+                      className="btn btn-outline-success"
+                      onClick={handleLoadMoreSamples}
+                      disabled={isLoading}
+                    >
+                      {isLoading
+                        ? "Loading..."
+                        : `Load More Samples (50 more, up to 1000 max)`}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : currentEdges.length === 0 ? (
             <div className="text-center text-light py-4">
               No {activeTab} data connections
             </div>
