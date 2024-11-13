@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import NetworkStatistics from "./components/NetworkStatistics";
 import SigmaGraph from "./components/SigmaGraph";
 import DataBrowser from "./components/DataBrowser";
@@ -16,7 +16,7 @@ const GraphVisualization = () => {
   });
 
   // Generate mock data with more connections
-  const generateMockData = useCallback((nodeCount = 3000) => {
+  const generateMockData = useCallback((nodeCount = 500) => {
     const nodes = Array.from({ length: nodeCount }, (_, i) => ({
       id: `node${i}`,
       name: `Node ${i}`,
@@ -57,7 +57,7 @@ const GraphVisualization = () => {
     }
 
     // Add random connections
-    const targetEdgeCount = Math.min(nodeCount * 3, 4000);
+    const targetEdgeCount = Math.min(50000);
     let attempts = 0;
     const maxAttempts = targetEdgeCount * 2;
 
@@ -102,7 +102,7 @@ const GraphVisualization = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const newData = generateMockData(3000);
+        const newData = generateMockData(500);
         setData(newData);
 
         const connectionCounts = newData.nodes.map((node) => {
@@ -221,12 +221,15 @@ const GraphVisualization = () => {
                 className="card-body p-0"
                 style={{ background: "#1a1b26", height: "50vh" }}
               >
-                <SigmaGraph
-                  data={data}
-                  selectedNode={selectedNode}
-                  setSelectedNode={setSelectedNode}
-                  searchTerm={searchTerm}
-                />
+                <Suspense>
+                  {" "}
+                  <SigmaGraph
+                    data={data}
+                    selectedNode={selectedNode}
+                    setSelectedNode={setSelectedNode}
+                    searchTerm={searchTerm}
+                  />
+                </Suspense>
               </div>
             </div>
 
