@@ -1,63 +1,105 @@
 import React, { useState, useEffect } from "react";
 
-interface Node {
-  id: string;
-  name: string;
-}
+const DataFlowItem = ({ edge, direction }) => (
+  <div
+    className="border border-secondary rounded p-3 mb-2"
+    style={{ background: "#1a1b26" }}
+  >
+    <div className="d-flex justify-content-between align-items-center mb-2">
+      <div className="d-flex align-items-center gap-2">
+        {direction === "incoming" ? (
+          <span className="text-warning">↓</span>
+        ) : (
+          <span className="text-info">↑</span>
+        )}
+        <span className="text-light">
+          {direction === "incoming" ? edge.source.name : edge.target.name}
+        </span>
+      </div>
+      <div className="d-flex align-items-center gap-1 text-light">
+        <span>🕒</span>
+        <span className="small text-white">
+          {new Date(edge.timestamp).toLocaleTimeString()}
+        </span>
+      </div>
+    </div>
 
-interface Edge {
-  source: Node;
-  target: Node;
-  timestamp: string;
-  metric1: number;
-  metric2: number;
-  weight: number;
-}
+    <div className="row g-4">
+      <div className="col-4">
+        <div className="d-flex flex-column">
+          <span className="text-light small">Metric 1</span>
+          <span className="text-light fw-small">{edge.metric1.toFixed(2)}</span>
+        </div>
+      </div>
+      <div className="col-4">
+        <div className="d-flex flex-column">
+          <span className="text-light small">Metric 2</span>
+          <span className="text-light fw-small">{edge.metric2.toFixed(2)}</span>
+        </div>
+      </div>
+      <div className="col-4">
+        <div className="d-flex flex-column">
+          <span className="text-light small">Weight</span>
+          <span className="text-light fw-small">{edge.weight.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
-interface HighVolumeData {
-  metrics: Edge[];
-  summary: {
-    totalConnections: number;
-    averageMetric1: string;
-    averageMetric2: string;
-    averageWeight: string;
-    timeRange: {
-      start: string;
-      end: string;
-    };
-  };
-}
+const HighVolumeSummary = ({ summary }) => (
+  <div
+    className="border border-secondary rounded p-4 mb-3"
+    style={{ background: "#1a1b26" }}
+  >
+    <h6 className="text-light mb-3">High Volume Connection Summary</h6>
+    <div className="row g-3">
+      <div className="col-6 col-md-3">
+        <div className="d-flex flex-column">
+          <span className="text-light small">Total Connections</span>
+          <span className="text-light fw-small">
+            {summary.totalConnections.toLocaleString()}
+          </span>
+        </div>
+      </div>
+      <div className="col-6 col-md-3">
+        <div className="d-flex flex-column">
+          <span className="text-light small">Avg Metric 1</span>
+          <span className="text-light fw-small">{summary.averageMetric1}</span>
+        </div>
+      </div>
+      <div className="col-6 col-md-3">
+        <div className="d-flex flex-column">
+          <span className="text-light small">Avg Metric 2</span>
+          <span className="text-light fw-small">{summary.averageMetric2}</span>
+        </div>
+      </div>
+      <div className="col-6 col-md-3">
+        <div className="d-flex flex-column">
+          <span className="text-light small">Avg Weight</span>
+          <span className="text-light fw-small">{summary.averageWeight}</span>
+        </div>
+      </div>
+      <div className="col-12">
+        <div className="d-flex flex-column">
+          <span className="text-light small">Time Range</span>
+          <span className="text-light fw-small">
+            {summary.timeRange.start} - {summary.timeRange.end}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
-interface DataBrowserProps {
-  selectedNode: Node | null;
-  getConnectedEdges: (nodeId: string) => Edge[];
-}
+const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
+  const [activeTab, setActiveTab] = useState("incoming");
+  const [displayCount, setDisplayCount] = useState(5);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showHighVolume, setShowHighVolume] = useState(false);
+  const [highVolumeData, setHighVolumeData] = useState(null);
+  const [sampleSize, setSampleSize] = useState(20);
 
-interface DataFlowItemProps {
-  edge: Edge;
-  direction: "incoming" | "outgoing";
-}
-
-interface HighVolumeSummaryProps {
-  summary: HighVolumeData["summary"];
-}
-
-const DataBrowser: React.FC<DataBrowserProps> = ({
-  selectedNode,
-  getConnectedEdges,
-}) => {
-  const [activeTab, setActiveTab] = useState<"incoming" | "outgoing">(
-    "incoming"
-  );
-  const [displayCount, setDisplayCount] = useState<number>(5);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [showHighVolume, setShowHighVolume] = useState<boolean>(false);
-  const [highVolumeData, setHighVolumeData] = useState<HighVolumeData | null>(
-    null
-  );
-  const [sampleSize, setSampleSize] = useState<number>(20);
-
-  // Reset states when selected node changes
   useEffect(() => {
     setDisplayCount(5);
     setShowHighVolume(false);
@@ -65,13 +107,12 @@ const DataBrowser: React.FC<DataBrowserProps> = ({
     setSampleSize(20);
   }, [selectedNode?.id]);
 
-  // Reset display count when tab changes
   useEffect(() => {
     setDisplayCount(5);
   }, [activeTab]);
 
-  const generateHighVolumeData = (): HighVolumeData => {
-    const mockMetrics: Edge[] = Array.from({ length: 100000 }, (_, index) => ({
+  const generateHighVolumeData = () => {
+    const mockMetrics = Array.from({ length: 100000 }, (_, index) => ({
       timestamp: new Date(
         Date.now() - Math.random() * 10000000000
       ).toISOString(),
@@ -109,9 +150,8 @@ const DataBrowser: React.FC<DataBrowserProps> = ({
     return { metrics: mockMetrics, summary };
   };
 
-  const handleLoadHighVolume = (): void => {
+  const handleLoadHighVolume = () => {
     setIsLoading(true);
-    // Simulate loading delay
     setTimeout(() => {
       const data = generateHighVolumeData();
       setHighVolumeData(data);
@@ -120,7 +160,7 @@ const DataBrowser: React.FC<DataBrowserProps> = ({
     }, 500);
   };
 
-  const handleLoadMore = (): void => {
+  const handleLoadMore = () => {
     setIsLoading(true);
     setTimeout(() => {
       setDisplayCount((prev) => prev + 20);
@@ -128,10 +168,10 @@ const DataBrowser: React.FC<DataBrowserProps> = ({
     }, 300);
   };
 
-  const handleLoadMoreSamples = (): void => {
+  const handleLoadMoreSamples = () => {
     setIsLoading(true);
     setTimeout(() => {
-      setSampleSize((prev) => Math.min(prev + 50, 1000)); // Limit to 1000 samples max
+      setSampleSize((prev) => Math.min(prev + 50, 1000));
       setIsLoading(false);
     }, 300);
   };
@@ -157,110 +197,6 @@ const DataBrowser: React.FC<DataBrowserProps> = ({
   const currentEdges = activeTab === "incoming" ? incomingEdges : outgoingEdges;
   const displayedEdges = currentEdges.slice(0, displayCount);
   const hasMore = displayCount < currentEdges.length;
-
-  const DataFlowItem: React.FC<DataFlowItemProps> = ({ edge, direction }) => (
-    <div
-      className="border border-secondary rounded p-3 mb-2"
-      style={{ background: "#1a1b26" }}
-    >
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <div className="d-flex align-items-center gap-2">
-          {direction === "incoming" ? (
-            <span className="text-warning">↓</span>
-          ) : (
-            <span className="text-info">↑</span>
-          )}
-          <span className="text-light">
-            {direction === "incoming" ? edge.source.name : edge.target.name}
-          </span>
-        </div>
-        <div className="d-flex align-items-center gap-1 text-light">
-          <span>🕒</span>
-          <span className="small text-white">
-            {new Date(edge.timestamp).toLocaleTimeString()}
-          </span>
-        </div>
-      </div>
-
-      <div className="row g-4">
-        <div className="col-4">
-          <div className="d-flex flex-column">
-            <span className="text-light small">Metric 1</span>
-            <span className="text-light fw-medium">
-              {edge.metric1.toFixed(2)}
-            </span>
-          </div>
-        </div>
-        <div className="col-4">
-          <div className="d-flex flex-column">
-            <span className="text-light small">Metric 2</span>
-            <span className="text-light fw-medium">
-              {edge.metric2.toFixed(2)}
-            </span>
-          </div>
-        </div>
-        <div className="col-4">
-          <div className="d-flex flex-column">
-            <span className="text-light small">Weight</span>
-            <span className="text-light fw-medium">
-              {edge.weight.toFixed(2)}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const HighVolumeSummary: React.FC<HighVolumeSummaryProps> = ({ summary }) => (
-    <div
-      className="border border-secondary rounded p-4 mb-3"
-      style={{ background: "#1a1b26" }}
-    >
-      <h6 className="text-light mb-3">High Volume Connection Summary</h6>
-      <div className="row g-3">
-        <div className="col-6 col-md-3">
-          <div className="d-flex flex-column">
-            <span className="text-light small">Total Connections</span>
-            <span className="text-light fw-medium">
-              {summary.totalConnections.toLocaleString()}
-            </span>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="d-flex flex-column">
-            <span className="text-light small">Avg Metric 1</span>
-            <span className="text-light fw-medium">
-              {summary.averageMetric1}
-            </span>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="d-flex flex-column">
-            <span className="text-light small">Avg Metric 2</span>
-            <span className="text-light fw-medium">
-              {summary.averageMetric2}
-            </span>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="d-flex flex-column">
-            <span className="text-light small">Avg Weight</span>
-            <span className="text-light fw-medium">
-              {summary.averageWeight}
-            </span>
-          </div>
-        </div>
-        <div className="col-12">
-          <div className="d-flex flex-column">
-            <span className="text-light small">Time Range</span>
-            <span className="text-light fw-medium">
-              {summary.timeRange.start} - {summary.timeRange.end}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="card bg-dark border-secondary">

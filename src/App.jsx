@@ -1,129 +1,99 @@
 import React, { useState, useEffect, useCallback, Suspense } from "react";
-import NetworkStatistics from "./components/NetworkStatistics";
-import SigmaGraph from "./components/SigmaGraph";
-import DataBrowser from "./components/DataBrowser.tsx";
+import NetworkStatistics from "./components/NetworkStatistics.jsx";
+import SigmaGraph from "./components/SigmaGraph.jsx";
+import DataBrowser from "./components/DataBrowser.jsx";
 
-interface Node {
-  id: string;
-  name: string;
-  group: number;
-  radius: number;
-}
-
-interface Edge {
-  source: Node;
-  target: Node;
-  weight: number;
-  metric1: number;
-  metric2: number;
-  timestamp: string;
-}
-
-interface GraphData {
-  nodes: Node[];
-  edges: Edge[];
-}
-
-interface Statistics {
-  avgConnections: number;
-  maxConnections: number;
-  isolatedNodes: number;
-}
-
-const GraphVisualization: React.FC = () => {
-  const [data, setData] = useState<GraphData>({ nodes: [], edges: [] });
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [statistics, setStatistics] = useState<Statistics>({
+const GraphVisualization = () => {
+  const [data, setData] = useState({ nodes: [], edges: [] });
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [statistics, setStatistics] = useState({
     avgConnections: 0,
     maxConnections: 0,
     isolatedNodes: 0,
   });
 
   // Generate mock data with more connections
-  const generateMockData = useCallback(
-    (nodeCount: number = 1000): GraphData => {
-      const nodes: Node[] = Array.from({ length: nodeCount }, (_, i) => ({
-        id: `node${i}`,
-        name: `Node ${i}`,
-        group: Math.floor(Math.random() * 5),
-        radius: 15,
-      }));
+  const generateMockData = useCallback((nodeCount = 1000) => {
+    const nodes = Array.from({ length: nodeCount }, (_, i) => ({
+      id: `node${i}`,
+      name: `Node ${i}`,
+      group: Math.floor(Math.random() * 5),
+      radius: 15,
+    }));
 
-      const edgeSet = new Set<string>();
-      const edges: Edge[] = [];
+    const edgeSet = new Set();
+    const edges = [];
 
-      const addEdgeIfNotExists = (source: number, target: number): boolean => {
-        const edgeKey = `${source}-${target}`;
-        const reverseEdgeKey = `${target}-${source}`;
+    const addEdgeIfNotExists = (source, target) => {
+      const edgeKey = `${source}-${target}`;
+      const reverseEdgeKey = `${target}-${source}`;
 
-        if (!edgeSet.has(edgeKey) && !edgeSet.has(reverseEdgeKey)) {
-          edgeSet.add(edgeKey);
-          edges.push({
-            source: nodes[source],
-            target: nodes[target],
-            weight: Math.random() * 10,
-            metric1: Math.random() * 100,
-            metric2: Math.random() * 1000,
-            timestamp: new Date(
-              Date.now() - Math.random() * 10000000000
-            ).toISOString(),
-          });
-          return true;
-        }
-        return false;
-      };
-
-      // Create initial connections (ring topology)
-      for (let i = 0; i < nodes.length; i++) {
-        const nextIndex = (i + 1) % nodes.length;
-        addEdgeIfNotExists(i, nextIndex);
+      if (!edgeSet.has(edgeKey) && !edgeSet.has(reverseEdgeKey)) {
+        edgeSet.add(edgeKey);
+        edges.push({
+          source: nodes[source],
+          target: nodes[target],
+          weight: Math.random() * 10,
+          metric1: Math.random() * 100,
+          metric2: Math.random() * 1000,
+          timestamp: new Date(
+            Date.now() - Math.random() * 10000000000
+          ).toISOString(),
+        });
+        return true;
       }
+      return false;
+    };
 
-      // Add random connections
-      const targetEdgeCount = Math.min(50000);
-      let attempts = 0;
-      const maxAttempts = targetEdgeCount * 2;
+    // Create initial connections (ring topology)
+    for (let i = 0; i < nodes.length; i++) {
+      const nextIndex = (i + 1) % nodes.length;
+      addEdgeIfNotExists(i, nextIndex);
+    }
 
-      while (edges.length < targetEdgeCount && attempts < maxAttempts) {
-        const source = Math.floor(Math.random() * nodeCount);
-        let target = Math.floor(Math.random() * nodeCount);
+    // Add random connections
+    const targetEdgeCount = Math.min(50000);
+    let attempts = 0;
+    const maxAttempts = targetEdgeCount * 2;
 
-        if (source !== target) {
-          const distance = Math.abs(target - source);
-          const probability = 1 / (1 + distance / 100);
+    while (edges.length < targetEdgeCount && attempts < maxAttempts) {
+      const source = Math.floor(Math.random() * nodeCount);
+      let target = Math.floor(Math.random() * nodeCount);
 
-          if (Math.random() < probability) {
-            addEdgeIfNotExists(source, target);
-          }
-        }
-        attempts++;
-      }
+      if (source !== target) {
+        const distance = Math.abs(target - source);
+        const probability = 1 / (1 + distance / 100);
 
-      // Add hub connections
-      const hubCount = Math.floor(nodeCount * 0.01);
-      for (let i = 0; i < hubCount; i++) {
-        const hubIndex = Math.floor(Math.random() * nodeCount);
-        const connectionCount = Math.floor(nodeCount * 0.05);
-
-        let hubAttempts = 0;
-        while (hubAttempts < connectionCount * 2) {
-          const target = Math.floor(Math.random() * nodeCount);
-          if (hubIndex !== target) {
-            addEdgeIfNotExists(hubIndex, target);
-          }
-          hubAttempts++;
+        if (Math.random() < probability) {
+          addEdgeIfNotExists(source, target);
         }
       }
+      attempts++;
+    }
 
-      return { nodes, edges };
-    },
-    []
-  );
+    // Add hub connections
+    const hubCount = Math.floor(nodeCount * 0.01);
+    for (let i = 0; i < hubCount; i++) {
+      const hubIndex = Math.floor(Math.random() * nodeCount);
+      const connectionCount = Math.floor(nodeCount * 0.05);
+
+      let hubAttempts = 0;
+      while (hubAttempts < connectionCount * 2) {
+        const target = Math.floor(Math.random() * nodeCount);
+        if (hubIndex !== target) {
+          addEdgeIfNotExists(hubIndex, target);
+        }
+        hubAttempts++;
+      }
+    }
+
+    return { nodes, edges };
+  }, []);
 
   useEffect(() => {
-    const loadData = async (): Promise<void> => {
-      setLoading(true);
+    const loadData = async () => {
+      setIsLoading(true);
       try {
         const newData = generateMockData(1000);
         setData(newData);
@@ -147,7 +117,7 @@ const GraphVisualization: React.FC = () => {
       } catch (error) {
         console.error("Error loading data:", error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -155,7 +125,7 @@ const GraphVisualization: React.FC = () => {
   }, [generateMockData]);
 
   const getConnectedEdges = useCallback(
-    (nodeId: string): Edge[] => {
+    (nodeId) => {
       return data.edges.filter(
         (edge) => edge.source.id === nodeId || edge.target.id === nodeId
       );
@@ -172,7 +142,7 @@ const GraphVisualization: React.FC = () => {
         height: "100%",
       }}
     >
-      <div className="container-fluid p-0 flex-grow-1">
+      <div className="container-fluid flex-grow-1">
         <div className="row g-1 h-100">
           {/* Left Sidebar - Statistics (Desktop only) */}
           <div
@@ -224,7 +194,7 @@ const GraphVisualization: React.FC = () => {
                       <Suspense fallback={<div>Loading...</div>}>
                         <SigmaGraph
                           data={data}
-                          loading={loading}
+                          loading={isLoading}
                           selectedNode={selectedNode}
                           setSelectedNode={setSelectedNode}
                         />
