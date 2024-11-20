@@ -243,7 +243,7 @@ const DataBrowser = ({ selectedNode, getConnectedEdges }) => {
         <div
           className="tab-content"
           style={{
-            height: "630px",
+            height: "650px",
             overflowY: "auto",
             overflowX: "hidden",
             paddingRight: "5px",
