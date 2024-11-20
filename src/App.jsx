@@ -167,7 +167,7 @@ const GraphVisualization = () => {
 
           {/* Main Content Area */}
           <div className="col-12 col-xl-10 h-100">
-            <div className="p-3 h-100">
+            <div class="p-0 px-md-3 py-3 h-100">
               {/* Network Graph and Data Browser Container */}
               <div className="row g-3 h-100">
                 {/* Network Graph Card */}
